@@ -6,7 +6,7 @@ from CHARACTERS import personajes
 from RESOURCES import HandLes as h
 from RESOURCES import hud
 
-TITULO = "SELECCIONA TU CÉLULA: [A/D o FLECHAS] | [ENTER] CONFIRMAR"
+TITULO = "ISSAC Y EL CORAZON DE MAMA"
 FUENTE = GLUT_BITMAP_HELVETICA_18  # type: ignore
 
 # posición X de cada pedestal y personaje que muestra
