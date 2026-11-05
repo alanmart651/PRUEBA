@@ -2,10 +2,7 @@ import math
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
-from CHARACTERS import Issac as issac
-from CHARACTERS import azazel as azazel
-from CHARACTERS import chispa as chispa
-from CHARACTERS import mapi as mapi
+from CHARACTERS import personajes
 from RESOURCES import HandLes as h
 from RESOURCES import hud
 
@@ -13,8 +10,9 @@ TITULO = "SELECCIONA TU CÉLULA: [A/D o FLECHAS] | [ENTER] CONFIRMAR"
 FUENTE = GLUT_BITMAP_HELVETICA_18  # type: ignore
 
 # posición X de cada pedestal y personaje que muestra
-SLOTS = {"isaac": -9.0, "azazel": -3.0, "chispa": 3.0, "mapi": 9.0}
-NOMBRES = {"isaac": "ISAAC", "azazel": "AZAZEL", "chispa": "CHISPA", "mapi": "MAPI"}
+SLOTS = {"isaac": -15.0, "azazel": -9.0, "chispa": -3.0, "mapi": 3.0, "brote": 9.0, "perno": 15.0}
+NOMBRES = {"isaac": "ISAAC", "azazel": "AZAZEL", "chispa": "CHISPA", "mapi": "MAPI",
+           "brote": "BROTE", "perno": "PERNO"}
 RADIO_PEDESTAL = 2.6
 ALTO_PEDESTAL = 0.8
 
@@ -106,14 +104,7 @@ def _dibujar_personaje(nombre, seleccionado, t):
     else:
         expresion, movimiento = "normal", "reposo"
 
-    if nombre == "isaac":
-        issac.draw_isaac(expresion, movimiento, t)
-    elif nombre == "azazel":
-        azazel.draw_azazel(expresion, movimiento, t)
-    elif nombre == "chispa":
-        chispa.draw_chispa(expresion, movimiento, t)
-    else:
-        mapi.draw_mapi(expresion, movimiento, t)
+    personajes.DIBUJAR[nombre](expresion, movimiento, t)
     glPopMatrix()
 
 
@@ -162,7 +153,7 @@ def draw_character_select_menu(t):
     # Cámara fija
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
-    gluLookAt(0.0, 5.5, 17.0, 0.0, 2.8, 0.0, 0.0, 1.0, 0.0)
+    gluLookAt(0.0, 6.0, 21.0, 0.0, 2.8, 0.0, 0.0, 1.0, 0.0)
 
     glPushAttrib(GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT)  # type: ignore
     glEnable(GL_DEPTH_TEST)

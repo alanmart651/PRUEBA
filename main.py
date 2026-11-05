@@ -4,7 +4,7 @@ from OpenGL.GLUT import *
 import math
 import sys
 import time
-from CHARACTERS import Issac as issac
+from CHARACTERS import personajes
 from RESOURCES import HandLes as h
 from RESOURCES import iluminacion as luz
 from RESOURCES import hud
@@ -12,9 +12,6 @@ from SCENS import saladeangel as sala_angel
 from SCENS import saladeldiablo as sala_diablo
 from SCENS import saladarkroom as darkroom
 from ACTIONS.audio import init_audio, shutdown_audio, play_sound
-from CHARACTERS import azazel as azazel
-from CHARACTERS import chispa as chispa
-from CHARACTERS import mapi as mapi
 from SCENS import homeroom as home
 from SCENS import heartroom as heart
 from SCENS import salapuzle as sala
@@ -146,14 +143,7 @@ def display():
     glPushMatrix()
     glTranslatef(h.player_x, 0.0, h.player_z - 7.0)
 
-    if h.personaje_actual == "isaac":
-        issac.draw_isaac(expresion, movimiento, t)
-    elif h.personaje_actual == "azazel":
-        azazel.draw_azazel(expresion, movimiento, t)
-    elif h.personaje_actual == "chispa":
-        chispa.draw_chispa(expresion, movimiento, t)
-    else:
-        mapi.draw_mapi(expresion, movimiento, t)
+    personajes.DIBUJAR[h.personaje_actual](expresion, movimiento, t)
 
     # Hitbox del jugador
     if h.mostrar_hitboxes:

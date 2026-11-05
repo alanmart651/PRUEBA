@@ -19,7 +19,7 @@ mostrar_instrucciones = False
 mostrar_acerca_de = False
 estado_escenario = "MENU"
 personaje_actual = "isaac"
-opciones_personaje = ["isaac", "azazel", "chispa", "mapi"]
+opciones_personaje = ["isaac", "azazel", "chispa", "mapi", "brote", "perno"]
 indice_seleccionado = 0
 player_x = 0.0
 player_z = 7.0
@@ -281,14 +281,8 @@ def mouse_motion(x, y):
 
 #menú del clic derecho
 def menu_callback(valor):
-    if valor == 100:
-        cambiar_personaje("isaac")
-    elif valor == 101:
-        cambiar_personaje("azazel")
-    elif valor == 102:
-        cambiar_personaje("chispa")
-    elif valor == 103:
-        cambiar_personaje("mapi")
+    if 100 <= valor < 200:
+        cambiar_personaje(opciones_personaje[valor - 100])
     elif 200 <= valor < 300:
         cambiar_expresion(ETIQUETAS_EXPRESION[valor - 200][1])
     elif 300 <= valor < 400:
@@ -317,10 +311,8 @@ def menu_callback(valor):
 #crear menú (llamar después de glutCreateWindow)
 def crear_menu():
     sub_personaje = glutCreateMenu(menu_callback)
-    glutAddMenuEntry(b"Isaac", 100)
-    glutAddMenuEntry(b"Azazel", 101)
-    glutAddMenuEntry(b"Chispa", 102)
-    glutAddMenuEntry(b"Mapi", 103)
+    for i, personaje in enumerate(opciones_personaje):
+        glutAddMenuEntry(personaje.capitalize().encode(), 100 + i)
 
     sub_expresion = glutCreateMenu(menu_callback)
     for i, (etiqueta, _) in enumerate(ETIQUETAS_EXPRESION):

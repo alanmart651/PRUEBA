@@ -61,7 +61,7 @@ def draw_hud(width, height):
 
     if h.mostrar_acerca_de:
         draw_text_2D(20, 30, "ACERCA DE", 1, 1, 1)
-        draw_text_2D(20, 60, "Isaac, Azazel, Chispa y Mapi", 1, 1, 1)
+        draw_text_2D(20, 60, "Isaac, Azazel, Chispa, Mapi, Brote y Perno", 1, 1, 1)
         draw_text_2D(20, 85, "Creado por: Roberto Tapia Ramírez (cannibalfps)", 1, 1, 1)
 
     if h.mostrar_instrucciones:
