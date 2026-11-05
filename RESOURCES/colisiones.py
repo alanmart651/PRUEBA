@@ -1,4 +1,3 @@
-import math
 
 def check_aabb(px, pz, radio, bx, by, bz, bw, bh, bd):
     # Detección para Vesículas plano XZ

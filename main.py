@@ -13,6 +13,8 @@ from SCENS import saladeldiablo as sala_diablo
 from SCENS import saladarkroom as darkroom
 from ACTIONS.audio import init_audio, shutdown_audio, play_sound
 from CHARACTERS import azazel as azazel
+from CHARACTERS import chispa as chispa
+from CHARACTERS import mapi as mapi
 from SCENS import homeroom as home
 from SCENS import heartroom as heart
 from SCENS import salapuzle as sala
@@ -91,7 +93,7 @@ def notificar_nuevas_colisiones(actuales):
 
 
 def display():
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)  # type: ignore
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
@@ -146,8 +148,12 @@ def display():
 
     if h.personaje_actual == "isaac":
         issac.draw_isaac(expresion, movimiento, t)
-    else:
+    elif h.personaje_actual == "azazel":
         azazel.draw_azazel(expresion, movimiento, t)
+    elif h.personaje_actual == "chispa":
+        chispa.draw_chispa(expresion, movimiento, t)
+    else:
+        mapi.draw_mapi(expresion, movimiento, t)
 
     # Hitbox del jugador
     if h.mostrar_hitboxes:
@@ -184,8 +190,10 @@ def reshape(w, h_win):
 #main
 def main():
     glutInit(sys.argv)
+    # Al salir (ESC o cerrar la ventana) glutMainLoop regresa para poder cerrar el audio
+    glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION)
     init_audio()
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)  # type: ignore
     glutInitWindowSize(width, height)
     glutCreateWindow(b"Isaac")
     init()

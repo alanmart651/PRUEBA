@@ -1,12 +1,13 @@
-import sys
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from ACTIONS.audio import play_sound, stop_sound
 from RESOURCES import iluminacion as luz
 
+ZOOM_INICIAL = -25.0
+
 angle_x, angle_y = 0.0, 0.0
-zoom_z = -25.0
+zoom_z = ZOOM_INICIAL
 last_mouse_x, last_mouse_y = 0, 0
 is_mouse_pressed = False
 bg_color_index = 3
@@ -18,7 +19,7 @@ mostrar_instrucciones = False
 mostrar_acerca_de = False
 estado_escenario = "MENU"
 personaje_actual = "isaac"
-opciones_personaje = ["isaac", "azazel"]
+opciones_personaje = ["isaac", "azazel", "chispa", "mapi"]
 indice_seleccionado = 0
 player_x = 0.0
 player_z = 7.0
@@ -105,7 +106,7 @@ def confirmar_personaje():
 def reiniciar_camara():
     global angle_x, angle_y, zoom_z
     angle_x, angle_y = 0.0, 0.0
-    zoom_z = -10.0
+    zoom_z = ZOOM_INICIAL
     play_sound("reiniciar")
 
 
@@ -151,10 +152,11 @@ def keyboard(key, x, y):
     k = key.lower()
 
     if key == b'\x1b':  # Tecla ESC para salir
+        # sys.exit() no sirve aquí: dentro de un callback de GLUT la excepción se ignora
         play_sound("salir")
-        sys.exit()
+        glutLeaveMainLoop()
 
-    #MENÚ DE SELECCIÓN DE PERSONAJE (solo A/D y ENTER)
+    #MENÚ DE SELECCIÓN DE PERSONAJE (solo A/D, flechas y ENTER)
     elif estado_escenario == "MENU":
         if k == b'a':
             mover_seleccion_personaje(-1)
@@ -196,7 +198,7 @@ def keyboard(key, x, y):
     elif k == b'v':
         alternar_hitboxes()
     elif k == b'k':
-        cambiar_personaje("azazel" if personaje_actual == "isaac" else "isaac")
+        cambiar_personaje(opciones_personaje[(indice_seleccionado + 1) % len(opciones_personaje)])
     elif k == b'l':
         luz.alternar_luz()
         play_sound("click")
@@ -215,6 +217,15 @@ def keyboard(key, x, y):
 #teclas especiales
 def special_keys(key, x, y):
     global angle_x, angle_y
+    # En el menú las flechas eligen personaje; la cámara del juego no se toca
+    if estado_escenario == "MENU":
+        if key == GLUT_KEY_LEFT:
+            mover_seleccion_personaje(-1)
+        elif key == GLUT_KEY_RIGHT:
+            mover_seleccion_personaje(1)
+        glutPostRedisplay()
+        return
+
     if key == GLUT_KEY_RIGHT:
         angle_y += 5
         play_sound("derecha")
@@ -233,6 +244,10 @@ def special_keys(key, x, y):
 #clic del mouse
 def mouse_click(button, state, x, y):
     global last_mouse_x, last_mouse_y, is_mouse_pressed, zoom_z
+
+    # El menú tiene cámara fija: arrastrar o hacer zoom no debe afectar al juego
+    if estado_escenario == "MENU":
+        return
 
     if button == GLUT_LEFT_BUTTON:
         if state == GLUT_DOWN:
@@ -270,6 +285,10 @@ def menu_callback(valor):
         cambiar_personaje("isaac")
     elif valor == 101:
         cambiar_personaje("azazel")
+    elif valor == 102:
+        cambiar_personaje("chispa")
+    elif valor == 103:
+        cambiar_personaje("mapi")
     elif 200 <= valor < 300:
         cambiar_expresion(ETIQUETAS_EXPRESION[valor - 200][1])
     elif 300 <= valor < 400:
@@ -300,6 +319,8 @@ def crear_menu():
     sub_personaje = glutCreateMenu(menu_callback)
     glutAddMenuEntry(b"Isaac", 100)
     glutAddMenuEntry(b"Azazel", 101)
+    glutAddMenuEntry(b"Chispa", 102)
+    glutAddMenuEntry(b"Mapi", 103)
 
     sub_expresion = glutCreateMenu(menu_callback)
     for i, (etiqueta, _) in enumerate(ETIQUETAS_EXPRESION):

@@ -1,4 +1,8 @@
 import os
+import time
+
+os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
+
 import pygame
 from ACTIONS import state
 
@@ -7,7 +11,7 @@ from ACTIONS import state
 # ============================================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
-SOUNDS_DIR = os.path.join(PROJECT_ROOT, "utils", "sounds")
+SOUNDS_DIR = os.path.join(PROJECT_ROOT, "UTILS", "SOUNDS")
 
 # ============================================================
 # ARCHIVOS DE SONIDO
@@ -117,6 +121,10 @@ def set_master_volume(volume):
 
 def shutdown_audio():
     try:
+        # Deja terminar el sonido de salida, con un límite por si hay música sonando
+        limite = time.time() + 1.0
+        while pygame.mixer.get_init() and pygame.mixer.get_busy() and time.time() < limite:
+            time.sleep(0.02)
         pygame.mixer.stop()
         pygame.mixer.quit()
     except pygame.error:

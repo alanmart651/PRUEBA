@@ -4,18 +4,17 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from CHARACTERS import Issac as issac
 from CHARACTERS import azazel as azazel
+from CHARACTERS import chispa as chispa
+from CHARACTERS import mapi as mapi
 from RESOURCES import HandLes as h
 from RESOURCES import hud
-from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
 
-
-
-TITULO = "SELECCIONA TU CÉLULA: [A/D] | [ENTER] CONFIRMAR"
-FUENTE = GLUT_BITMAP_HELVETICA_18
+TITULO = "SELECCIONA TU CÉLULA: [A/D o FLECHAS] | [ENTER] CONFIRMAR"
+FUENTE = GLUT_BITMAP_HELVETICA_18  # type: ignore
 
 # posición X de cada pedestal y personaje que muestra
-SLOTS = {"isaac": -5.5, "azazel": 5.5}
-NOMBRES = {"isaac": "ISAAC", "azazel": "AZAZEL"}
+SLOTS = {"isaac": -9.0, "azazel": -3.0, "chispa": 3.0, "mapi": 9.0}
+NOMBRES = {"isaac": "ISAAC", "azazel": "AZAZEL", "chispa": "CHISPA", "mapi": "MAPI"}
 RADIO_PEDESTAL = 2.6
 ALTO_PEDESTAL = 0.8
 
@@ -109,8 +108,12 @@ def _dibujar_personaje(nombre, seleccionado, t):
 
     if nombre == "isaac":
         issac.draw_isaac(expresion, movimiento, t)
-    else:
+    elif nombre == "azazel":
         azazel.draw_azazel(expresion, movimiento, t)
+    elif nombre == "chispa":
+        chispa.draw_chispa(expresion, movimiento, t)
+    else:
+        mapi.draw_mapi(expresion, movimiento, t)
     glPopMatrix()
 
 
@@ -144,7 +147,8 @@ def _dibujar_hud():
 
     for nombre, centro in centros.items():
         etiqueta = NOMBRES[nombre]
-        hud.draw_text_2D(centro - _ancho_texto(etiqueta) / 2, alto - 60, etiqueta, 1, 1, 1)
+        r, g, b = (1.0, 0.8, 0.2) if nombre == h.personaje_actual else (1.0, 1.0, 1.0)
+        hud.draw_text_2D(centro - _ancho_texto(etiqueta) / 2, alto - 60, etiqueta, r, g, b)
 
     glPopMatrix()
     glMatrixMode(GL_PROJECTION)
@@ -160,7 +164,7 @@ def draw_character_select_menu(t):
     glLoadIdentity()
     gluLookAt(0.0, 5.5, 17.0, 0.0, 2.8, 0.0, 0.0, 1.0, 0.0)
 
-    glPushAttrib(GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT)
+    glPushAttrib(GL_LIGHTING_BIT | GL_ENABLE_BIT | GL_CURRENT_BIT)  # type: ignore
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_LIGHTING)
     glDisable(GL_LIGHT1)

@@ -27,7 +27,7 @@ def draw_panel_colisiones(x, y):
 
 #panel de información general
 def draw_panel_estado(height):
-    pj = "Isaac" if h.personaje_actual == "isaac" else "Azazel"
+    pj = h.personaje_actual.capitalize()
     esc = NOMBRES_ESCENARIO.get(h.estado_escenario, str(h.estado_escenario))
     exp = h.expresion_mostrada + (" (reacción)" if h.expresion_mostrada != h.estado_expresion else "")
     mov = h.movimiento_mostrado + (" (reacción)" if h.movimiento_mostrado != h.estado_movimiento else "")
@@ -61,7 +61,7 @@ def draw_hud(width, height):
 
     if h.mostrar_acerca_de:
         draw_text_2D(20, 30, "ACERCA DE", 1, 1, 1)
-        draw_text_2D(20, 60, "Isaac y Azazel", 1, 1, 1)
+        draw_text_2D(20, 60, "Isaac, Azazel, Chispa y Mapi", 1, 1, 1)
         draw_text_2D(20, 85, "Creado por: Roberto Tapia Ramírez (cannibalfps)", 1, 1, 1)
 
     if h.mostrar_instrucciones:
@@ -75,7 +75,8 @@ def draw_hud(width, height):
         draw_text_2D(20, 346, "Personaje: K | Hitboxes: V | Luz: L | Sombreado: F | Sombras: O | Reacciones: E", 1, 1, 1)
         draw_text_2D(20, 374, "Sonido: P | Reiniciar cámara: R | Salir: ESC", 1, 1, 1)
 
-        draw_panel_colisiones(20, 420)
+        # A la derecha: en la columna izquierda se encimaría con el panel de estado
+        draw_panel_colisiones(width - 300, 150)
         draw_panel_estado(height)
 
     glPopMatrix()

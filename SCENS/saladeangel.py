@@ -263,6 +263,6 @@ def draw_angel_room():
             glVertex3f(12.0, 0.05, -5.4)
         glEnd()
         
+        # GL_BLEND queda activo: las sombras de todas las salas dependen de él
         glDepthMask(GL_TRUE)
-        glDisable(GL_BLEND)
         glPopMatrix()

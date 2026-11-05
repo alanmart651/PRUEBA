@@ -111,7 +111,7 @@ def keyboard_practica(key, x, y):
 
 if __name__ == "__main__":
     glutInit()
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)  # type: ignore
     glutInitWindowSize(800, 600)
     glutCreateWindow(b"Azazel")
     
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     glClearColor(0.1, 0.1, 0.12, 1.0)
 
     def display():
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)  # type: ignore
         glLoadIdentity()
         gluLookAt(0, 4, 20,  0, 3, 7,  0, 1, 0)
         
