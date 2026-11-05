@@ -18,6 +18,7 @@ from SCENS import heartroom as heart
 from SCENS import salapuzle as sala
 from SCENS import salaplanetarium as planetario
 from SCENS import objetos_biologicos as bio
+from SCENS import menu_seleccion as menu
 
 width = 1240
 height = 680
@@ -93,6 +94,13 @@ def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
+
+    # Menú de selección de personaje: pantalla propia, sin escena ni objetos
+    if h.estado_escenario == "MENU":
+        menu.draw_character_select_menu(time.time())
+        glutSwapBuffers()
+        return
+
     glTranslatef(0.0, -3.0, h.zoom_z)
     glRotatef(h.angle_x, 1, 0, 0)
     glRotatef(h.angle_y, 0, 1, 0)

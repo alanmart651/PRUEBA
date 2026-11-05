@@ -32,6 +32,8 @@ Frame order in `display()`: camera transform → lights → room → lights agai
 
 **Global state lives in `RESOURCES/HandLes.py`.** It holds the input callbacks, the GLUT menu and module-level state (`estado_escenario`, `estado_expresion`, `estado_movimiento`, `player_x`, `player_z`, camera angles, toggles). Other modules read it as `h.<name>`. Keep that form, because `from HandLes import x` would copy a stale value. Lighting toggles live separately in `RESOURCES/iluminacion.py`. Audio is loaded into `ACTIONS/state.py` and played by name with `play_sound`, which silently ignores unknown or failed sounds.
 
+**Start menu.** `estado_escenario` starts as `"MENU"`. In that state `main.display()` calls `SCENS/menu_seleccion.py` (its own fixed camera, lighting and HUD) and returns early, so no room, collisions or player are drawn. `HandLes.keyboard` ignores everything except A/D (choose character), ENTER (confirm, switches to scene `0`) and ESC while in the menu.
+
 **Selected vs. displayed state.** `estado_expresion` and `estado_movimiento` are what the user selected. While the player touches an object, `main.reaccion_actual` overrides them using `PRIORIDAD` and `REACCIONES`, and the result is stored in `expresion_mostrada` and `movimiento_mostrado`, which the HUD reads. Characters receive the resolved values.
 
 **Character contract.** `draw_isaac` and `draw_azazel` both take `(expresion, movimiento, t)` and branch on the same Spanish strings, including `"guiño"` with the ñ. A new expression or movement must be added to both characters.

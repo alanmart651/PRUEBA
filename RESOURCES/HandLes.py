@@ -16,8 +16,10 @@ estado_expresion = "normal"
 estado_movimiento = "reposo"
 mostrar_instrucciones = False
 mostrar_acerca_de = False
-estado_escenario = 0
+estado_escenario = "MENU"
 personaje_actual = "isaac"
+opciones_personaje = ["isaac", "azazel"]
+indice_seleccionado = 0
 player_x = 0.0
 player_z = 7.0
 mostrar_hitboxes = False
@@ -79,9 +81,24 @@ def cambiar_escenario(escenario):
 
 #cambiar personaje
 def cambiar_personaje(personaje):
-    global personaje_actual
+    global personaje_actual, indice_seleccionado
     personaje_actual = personaje
+    if personaje in opciones_personaje:
+        indice_seleccionado = opciones_personaje.index(personaje)
     play_sound("click")
+
+
+#mover la selección del menú de personajes (-1 izquierda, +1 derecha)
+def mover_seleccion_personaje(delta):
+    nuevo = max(0, min(len(opciones_personaje) - 1, indice_seleccionado + delta))
+    if nuevo != indice_seleccionado:
+        cambiar_personaje(opciones_personaje[nuevo])
+
+
+#confirmar el personaje elegido y entrar al juego
+def confirmar_personaje():
+    cambiar_personaje(opciones_personaje[indice_seleccionado])
+    cambiar_escenario(0)
 
 
 #reiniciar cámara
@@ -136,6 +153,15 @@ def keyboard(key, x, y):
     if key == b'\x1b':  # Tecla ESC para salir
         play_sound("salir")
         sys.exit()
+
+    #MENÚ DE SELECCIÓN DE PERSONAJE (solo A/D y ENTER)
+    elif estado_escenario == "MENU":
+        if k == b'a':
+            mover_seleccion_personaje(-1)
+        elif k == b'd':
+            mover_seleccion_personaje(1)
+        elif key in (b'\r', b'\n'):
+            confirmar_personaje()
 
     elif k == b'r':
         reiniciar_camara()
