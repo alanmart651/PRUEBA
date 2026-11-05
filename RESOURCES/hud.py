@@ -12,7 +12,7 @@ NOMBRES_ESCENARIO = {6: "Ángel", 7: "Diablo", 8: "Dark room", 9: "Home", 0: "Co
 def draw_text_2D(x, y, text, r, g, b):
     glColor3f(r, g, b)
     glRasterPos2f(x, y)
-    for chSar in text:
+    for char in text:
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(char))  # type: ignore
 
 
