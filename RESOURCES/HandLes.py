@@ -4,9 +4,11 @@ from OpenGL.GLUT import *
 from ACTIONS.audio import play_sound, stop_sound
 from RESOURCES import iluminacion as luz
 
-ZOOM_INICIAL = -25.0
+# Cámara inicial: vista desde arriba para ver todo el escenario
+ZOOM_INICIAL = -31.0
+ANGULO_X_INICIAL = 30.0
 
-angle_x, angle_y = 0.0, 0.0
+angle_x, angle_y = ANGULO_X_INICIAL, 0.0
 zoom_z = ZOOM_INICIAL
 last_mouse_x, last_mouse_y = 0, 0
 is_mouse_pressed = False
@@ -21,8 +23,6 @@ estado_escenario = "MENU"
 personaje_actual = "isaac"
 opciones_personaje = ["isaac", "azazel", "chispa", "mapi", "brote", "perno"]
 indice_seleccionado = 0
-player_x = 0.0
-player_z = 7.0
 mostrar_hitboxes = False
 reacciones_activas = True
 
@@ -37,7 +37,7 @@ EXPRESIONES = {
     b'1': "normal", b'2': "feliz", b'3': "triste", b'4': "enojado",
     b'5': "asombro", b'q': "guiño", b'j': "miedo",
 }
-ESCENARIOS = {b'6': 6, b'7': 7, b'8': 8, b'9': 9, b'0': 0, b'y': "y", b'u': "u"}
+ESCENARIOS = {b'6': 6, b'7': 7, b'8': 8, b'9': 9, b'0': 0, b'y': "y", b'u': "u", b't': "t"}
 
 SONIDO_MOVIMIENTO = {"reposo": "normal", "caminar": "caminar", "saltar": "saltar", "saludar": "saludar", "agacharse": "agacharse"}
 SONIDO_EXPRESION = {"normal": "normal", "feliz": "caminar", "triste": "saltar", "enojado": "saludar",
@@ -49,11 +49,14 @@ ETIQUETAS_MOVIMIENTO = [("Reposo", "reposo"), ("Caminar", "caminar"), ("Saltar",
                         ("Agacharse", "agacharse"), ("Elevar brazos", "elevar_brazos"),
                         ("Doblar piernas", "doblar_piernas"), ("Inclinarse", "inclinarse"), ("Flotar", "flotar")]
 ETIQUETAS_ESCENARIO = [("Angel", 6), ("Diablo", 7), ("Dark room", 8), ("Home", 9),
-                       ("Corazon", 0), ("Puzzle", "y"), ("Planetario", "u")]
+                       ("Corazon", 0), ("Vasos sanguineos", "t"), ("Puzzle", "y"), ("Planetario", "u")]
+# Teclas que mueven al personaje y a qué dirección corresponden
+TECLAS_MOVIMIENTO = {b'a': "izq", b'd': "der", b'w': "arr", b's': "aba"}
+FLECHAS = {GLUT_KEY_LEFT: "izq", GLUT_KEY_RIGHT: "der", GLUT_KEY_UP: "arr", GLUT_KEY_DOWN: "aba"}
 ACCIONES_MENU = [
     ("Luz on/off", 500), ("Sombreado plano/suave", 501), ("Sombras on/off", 502),
     ("Hitboxes on/off", 503), ("Reacciones on/off", 504), ("Instrucciones", 505),
-    ("Acerca de", 506), ("Reiniciar camara", 507),
+    ("Acerca de", 506), ("Reiniciar camara", 507), ("Reiniciar partida", 508), ("Volver al menu", 509),
 ]
 
 
@@ -98,14 +101,16 @@ def mover_seleccion_personaje(delta):
 
 #confirmar el personaje elegido y entrar al juego
 def confirmar_personaje():
+    from ACTIONS import juego  # import tardío: juego.py también importa este módulo
     cambiar_personaje(opciones_personaje[indice_seleccionado])
+    juego.iniciar_partida(personaje_actual)
     cambiar_escenario(0)
 
 
 #reiniciar cámara
 def reiniciar_camara():
     global angle_x, angle_y, zoom_z
-    angle_x, angle_y = 0.0, 0.0
+    angle_x, angle_y = ANGULO_X_INICIAL, 0.0
     zoom_z = ZOOM_INICIAL
     play_sound("reiniciar")
 
@@ -148,7 +153,7 @@ def alternar_reacciones():
 
 #teclado
 def keyboard(key, x, y):
-    global player_x, player_z
+    from ACTIONS import juego
     k = key.lower()
 
     if key == b'\x1b':  # Tecla ESC para salir
@@ -164,6 +169,18 @@ def keyboard(key, x, y):
             mover_seleccion_personaje(1)
         elif key in (b'\r', b'\n'):
             confirmar_personaje()
+
+    #PANTALLAS FINALES: ENTER acepta, RETROCESO vuelve al menú
+    elif juego.fase != "JUGANDO" and key in (b'\r', b'\n'):
+        juego.aceptar()
+    elif juego.fase != "JUGANDO" and key == b'\x08':
+        juego.volver_al_menu()
+
+    #JUEGO: ataque y movimiento (las teclas se sueltan en keyboard_up)
+    elif key == b' ':
+        juego.atacar()
+    elif k in TECLAS_MOVIMIENTO:
+        juego.tecla(TECLAS_MOVIMIENTO[k], True)
 
     elif k == b'r':
         reiniciar_camara()
@@ -183,16 +200,6 @@ def keyboard(key, x, y):
         cambiar_expresion(EXPRESIONES[k])
     elif k in ESCENARIOS:
         cambiar_escenario(ESCENARIOS[k])
-
-    #MOVER AL PERSONAJE
-    elif k == b'w':
-        player_z -= 0.3
-    elif k == b's':
-        player_z += 0.3
-    elif k == b'a':
-        player_x -= 0.3
-    elif k == b'd':
-        player_x += 0.3
 
     #OPCIONES
     elif k == b'v':
@@ -214,9 +221,17 @@ def keyboard(key, x, y):
     glutPostRedisplay()
 
 
+#soltar una tecla normal
+def keyboard_up(key, x, y):
+    from ACTIONS import juego
+    k = key.lower()
+    if k in TECLAS_MOVIMIENTO:
+        juego.tecla(TECLAS_MOVIMIENTO[k], False)
+
+
 #teclas especiales
 def special_keys(key, x, y):
-    global angle_x, angle_y
+    from ACTIONS import juego
     # En el menú las flechas eligen personaje; la cámara del juego no se toca
     if estado_escenario == "MENU":
         if key == GLUT_KEY_LEFT:
@@ -226,19 +241,17 @@ def special_keys(key, x, y):
         glutPostRedisplay()
         return
 
-    if key == GLUT_KEY_RIGHT:
-        angle_y += 5
-        play_sound("derecha")
-    elif key == GLUT_KEY_LEFT:
-        angle_y -= 5
-        play_sound("izquierda")
-    elif key == GLUT_KEY_UP:
-        angle_x -= 5
-        play_sound("arriba")
-    elif key == GLUT_KEY_DOWN:
-        angle_x += 5
-        play_sound("abajo")
+    # En el juego las flechas mueven al personaje (la cámara se orbita con el ratón)
+    if key in FLECHAS:
+        juego.tecla(FLECHAS[key], True)
     glutPostRedisplay()
+
+
+#soltar una flecha
+def special_up(key, x, y):
+    from ACTIONS import juego
+    if key in FLECHAS:
+        juego.tecla(FLECHAS[key], False)
 
 
 #clic del mouse
@@ -305,6 +318,12 @@ def menu_callback(valor):
         alternar_acerca_de()
     elif valor == 507:
         reiniciar_camara()
+    elif valor == 508 and estado_escenario != "MENU":
+        from ACTIONS import juego
+        juego.reiniciar()
+    elif valor == 509:
+        from ACTIONS import juego
+        juego.volver_al_menu()
     glutPostRedisplay()
 
 
