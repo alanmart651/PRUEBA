@@ -85,6 +85,18 @@ def terminar_transparencia():
     glPopAttrib()
 
 
+# ---------- niebla ----------
+def niebla(color, densidad):
+    glEnable(GL_FOG)
+    glFogi(GL_FOG_MODE, GL_EXP2)
+    glFogfv(GL_FOG_COLOR, [color[0], color[1], color[2], 1.0])
+    glFogf(GL_FOG_DENSITY, densidad)
+
+
+def sin_niebla():
+    glDisable(GL_FOG)
+
+
 # ---------- halo ----------
 def halo(pos, radio, color, alpha=0.35, capas=4, det=16):
     iniciar_aditivo()

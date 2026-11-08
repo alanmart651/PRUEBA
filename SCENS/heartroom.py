@@ -119,20 +119,13 @@ def draw_moms_heart_room():
         (2.5, 1.8, 5.0), (-3.0, 2.5, -5.0), (5.0, 0.5, -6.0)
     ]
 
-    glColor3f(0.9, 0.1, 0.1)
+    # Burbujas de plasma decorativas: translúcidas para no confundirse con los eritrocitos del juego
     for i, (px, py, pz) in enumerate(posiciones_sangre):
         glPushMatrix()
         flote = math.sin(t * 2.0 + i) * 0.2
-        glTranslatef(px, py + flote, pz)
-        glutSolidSphere(0.4, 15, 15)
-
-        glColor3f(1.0, 1.0, 1.0)
-        glPushMatrix()
-        glTranslatef(-0.15, 0.15, 0.3)
-        glutSolidSphere(0.1, 10, 10)
-        glPopMatrix()
-        glColor3f(0.9, 0.1, 0.1)
-
+        glTranslatef(px, py + 1.0 + flote, pz)
+        glColor4f(0.75, 0.25, 0.3, 0.35)
+        glutSolidSphere(0.28, 12, 12)
         glPopMatrix()
 
     glPopMatrix()

@@ -5,8 +5,11 @@ from OpenGL.GLUT import *
 from CHARACTERS import personajes
 from RESOURCES import HandLes as h
 from RESOURCES import hud
+from RESOURCES import visual as v
 
-TITULO = "ISSAC Y EL CORAZON DE MAMA"
+TITULO = "SELECCIONA TU CÉLULA"
+AYUDA = "[A/D o FLECHAS] mover   |   [ENTER] confirmar   |   [ESC] salir"
+FUENTE_TITULO = GLUT_BITMAP_TIMES_ROMAN_24  # type: ignore
 FUENTE = GLUT_BITMAP_HELVETICA_18  # type: ignore
 
 # posición X de cada pedestal y personaje que muestra
@@ -15,6 +18,16 @@ NOMBRES = {"isaac": "ISAAC", "azazel": "AZAZEL", "chispa": "CHISPA", "mapi": "MA
            "brote": "BROTE", "perno": "PERNO"}
 RADIO_PEDESTAL = 2.6
 ALTO_PEDESTAL = 0.8
+
+# Célula que representa cada personaje, su habilidad y su limitación
+ROLES = {
+    "isaac": "Macrófago (inmunidad innata) - fagocitosis en área - resistente y pesado",
+    "azazel": "Linfocito T citotóxico (adaptativa) - lisis citolítica - debe acercarse al objetivo",
+    "chispa": "Célula dendrítica (innata) - destello que aturde - el más rápido, daño bajo",
+    "mapi": "Linfocito B de memoria (adaptativa) - anticuerpos teledirigidos - débil de cerca",
+    "brote": "Fibroblasto cardiaco (soporte) - polen que atrae eritrocitos - daño muy bajo",
+    "perno": "Nanobot de inmunoterapia (externo) - lisis instantánea y escudo - gasta mucha energía",
+}
 
 _quad = None
 
@@ -85,6 +98,20 @@ def _dibujar_pedestal(seleccionado):
     glPopMatrix()
 
 
+#haz de luz cálido sobre el pedestal seleccionado
+def _haz_de_luz():
+    v.iniciar_aditivo()
+    glPushMatrix()
+    glTranslatef(0.0, ALTO_PEDESTAL, 0.0)
+    glRotatef(-90, 1, 0, 0)
+    glColor4f(1.0, 0.85, 0.5, 0.07)
+    glutSolidCone(RADIO_PEDESTAL * 0.95, 12.0, 28, 1)
+    glColor4f(1.0, 0.9, 0.6, 0.05)
+    glutSolidCone(RADIO_PEDESTAL * 0.55, 12.0, 20, 1)
+    glPopMatrix()
+    v.terminar_transparencia()
+
+
 #personaje sobre su pedestal
 def _dibujar_personaje(nombre, seleccionado, t):
     x = SLOTS[nombre]
@@ -92,6 +119,8 @@ def _dibujar_personaje(nombre, seleccionado, t):
     glTranslatef(x, 0.0, 0.0)
 
     _dibujar_pedestal(seleccionado)
+    if seleccionado:
+        _haz_de_luz()
 
     glTranslatef(0.0, ALTO_PEDESTAL, 0.0)
     glTranslatef(0.0, 0.0, -7.0)
@@ -134,7 +163,9 @@ def _dibujar_hud():
     glPushMatrix()
     glLoadIdentity()
 
-    hud.draw_text_2D((ancho - _ancho_texto(TITULO)) / 2, 50, TITULO, 1, 1, 1)
+    hud.texto_centrado(48, TITULO, (1.0, 0.85, 0.3), ancho, FUENTE_TITULO)
+    hud.texto_centrado(80, AYUDA, (1.0, 1.0, 1.0), ancho)
+    hud.texto_centrado(alto - 24, ROLES[h.personaje_actual], (1.0, 0.85, 0.5), ancho)
 
     for nombre, centro in centros.items():
         etiqueta = NOMBRES[nombre]

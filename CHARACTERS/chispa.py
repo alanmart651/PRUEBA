@@ -6,9 +6,10 @@ from CHARACTERS import animacion as anim
 from CHARACTERS import chibi as cb
 from RESOURCES import visual as v
 
-# Personaje 1: CHISPA, espiritu de llama violeta (estilo chibi)
+# Personaje 1: CHISPA, celula dendritica con bulbo luminoso (estilo chibi)
 active_movement = 0
 active_expression = 0
+brillo_extra = 0.0   # lo sube combate.py al lanzar el destello
 
 PIEL = (1.0, 0.88, 0.78)
 TUNICA = (0.12, 0.58, 0.62)
@@ -56,21 +57,27 @@ def _objetivo(t):
     return o
 
 
-# ---------- llamas de la cabeza ----------
+# ---------- bulbo luminoso de la cabeza (celula dendritica) ----------
 def _llamas(t, sombra):
-    piezas = [(-0.38, 0.95, 0.15, -28, 0.8), (0.38, 0.95, 0.15, 28, 0.8),
-              (0.0, 1.0, -0.25, 0, 0.9), (0.0, 1.05, 0.12, 0, 1.0)]
-    for i, (x, y, z, giro, tam) in enumerate(piezas):
-        f = 1.0 + 0.08 * math.sin(t * 6.0 + i * 1.3)
+    pulso = 0.5 + 0.5 * math.sin(t * 2.2)
+    k = 1.0 + brillo_extra * 0.5
+    # tallo y bulbo
+    v.cilindro((0, 0.95, 0), 0.07, 0.35, LLAMA_PUNTA, 0.05, 8, False)
+    v.material(90.0, 0.9, (0.25 + 0.5 * pulso + brillo_extra, 0.12 + 0.25 * pulso, 0.5 + 0.4 * pulso + brillo_extra))
+    v.esfera((0, 1.55, 0), (0.34 * k, 0.34 * k, 0.34 * k), v.mezclar(LLAMA, (1.0, 1.0, 1.0), 0.35 + 0.3 * pulso), 20)
+    v.material(25.0, 0.35)
+    # prolongaciones (dendritas) que ondulan
+    for i in range(6):
+        a = i * 1.0472 + t * 0.3
         glPushMatrix()
-        glTranslatef(x, y, z)
-        glRotatef(giro + math.sin(t * 3 + i) * 4, 0, 0, 1)
-        v.esfera((0, 0.12, 0), (0.33 * tam, 0.3 * tam, 0.33 * tam), LLAMA, 14)
-        v.cono((0, 0.15, 0), 0.3 * tam, 0.75 * tam * f, v.mezclar(LLAMA, LLAMA_PUNTA, 0.6), 14)
-        v.esfera((0, 0.15 + 0.72 * tam * f, 0), (0.06, 0.06, 0.06), LLAMA_PUNTA, 8)
+        glTranslatef(0.0, 1.55, 0.0)
+        glRotatef(math.degrees(a), 0, 1, 0)
+        glRotatef(55.0 + math.sin(t * 3.0 + i) * 12.0, 0, 0, 1)
+        v.cilindro((0, 0.3, 0), 0.05, 0.38, LLAMA, 0.02, 6, False)
+        v.esfera((0, 0.7, 0), (0.07, 0.07, 0.07), LLAMA_PUNTA, 8)
         glPopMatrix()
     if not sombra:
-        v.halo((0, 1.35, 0), 1.1, LLAMA, 0.16, 3)
+        v.halo((0, 1.55, 0), 1.0 + 1.2 * brillo_extra, LLAMA, 0.2 + 0.25 * brillo_extra, 4)
 
 
 # ---------- cabeza ----------

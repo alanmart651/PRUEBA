@@ -21,6 +21,11 @@ def configurar_iluminacion_base():
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
 
+#latido del miocardio (0 a 1): sincroniza la luz, el corazón y los vasos
+def pulso_latido(t):
+    return abs(math.sin(t * 4.0))
+
+
 #aplicar luces
 def aplicar_luces(t, escenario):
     glShadeModel(GL_SMOOTH if sombreado_suave else GL_FLAT)
@@ -38,10 +43,10 @@ def aplicar_luces(t, escenario):
     glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.85, 0.80, 0.75, 1.0))
     glLightfv(GL_LIGHT0, GL_SPECULAR, (0.90, 0.90, 0.90, 1.0))
 
-    if escenario == 0:
-        pulso = 0.55 + 0.45 * abs(math.sin(t * 4.0))
+    if escenario == 0 or escenario == "t":
+        pulso = 0.55 + 0.45 * pulso_latido(t)
         glEnable(GL_LIGHT1)
-        glLightfv(GL_LIGHT1, GL_POSITION, (0.0, 7.2, 0.0, 1.0))
+        glLightfv(GL_LIGHT1, GL_POSITION, (0.0, 7.2, 0.0, 1.0) if escenario == 0 else (0.0, 9.0, -4.0, 1.0))
         glLightfv(GL_LIGHT1, GL_AMBIENT, (0.0, 0.0, 0.0, 1.0))
         glLightfv(GL_LIGHT1, GL_DIFFUSE, (0.90 * pulso, 0.15 * pulso, 0.20 * pulso, 1.0))
         glLightfv(GL_LIGHT1, GL_SPECULAR, (0.80 * pulso, 0.20 * pulso, 0.20 * pulso, 1.0))
