@@ -37,7 +37,7 @@ EXPRESIONES = {
     b'1': "normal", b'2': "feliz", b'3': "triste", b'4': "enojado",
     b'5': "asombro", b'q': "guiño", b'j': "miedo",
 }
-ESCENARIOS = {b'6': 6, b'7': 7, b'8': 8, b'9': 9, b'0': 0, b'y': "y", b'u': "u", b't': "t"}
+ESCENARIOS = {b'6': 6, b'7': 7, b'8': 8, b'9': 9, b'0': 0, b'y': "y", b'u': "u", b't': 1}
 
 SONIDO_MOVIMIENTO = {"reposo": "normal", "caminar": "caminar", "saltar": "saltar", "saludar": "saludar", "agacharse": "agacharse"}
 SONIDO_EXPRESION = {"normal": "normal", "feliz": "caminar", "triste": "saltar", "enojado": "saludar",
@@ -49,9 +49,11 @@ ETIQUETAS_MOVIMIENTO = [("Reposo", "reposo"), ("Caminar", "caminar"), ("Saltar",
                         ("Agacharse", "agacharse"), ("Elevar brazos", "elevar_brazos"),
                         ("Doblar piernas", "doblar_piernas"), ("Inclinarse", "inclinarse"), ("Flotar", "flotar")]
 ETIQUETAS_ESCENARIO = [("Angel", 6), ("Diablo", 7), ("Dark room", 8), ("Home", 9),
-                       ("Corazon", 0), ("Vasos sanguineos", "t"), ("Puzzle", "y"), ("Planetario", "u")]
+                       ("Nivel 1 - Corazon", 0), ("Nivel 2 - Vaso sanguineo", 1), ("Nivel 3 - Ganglio linfatico", 2),
+                       ("Puzzle", "y"), ("Planetario", "u")]
 # Teclas que mueven al personaje y a qué dirección corresponden
 TECLAS_MOVIMIENTO = {b'a': "izq", b'd': "der", b'w': "arr", b's': "aba"}
+NIVELES_F = {GLUT_KEY_F1: 0, GLUT_KEY_F2: 1, GLUT_KEY_F3: 2}   # F1, F2 y F3 cambian de nivel
 FLECHAS = {GLUT_KEY_LEFT: "izq", GLUT_KEY_RIGHT: "der", GLUT_KEY_UP: "arr", GLUT_KEY_DOWN: "aba"}
 ACCIONES_MENU = [
     ("Luz on/off", 500), ("Sombreado plano/suave", 501), ("Sombras on/off", 502),
@@ -97,6 +99,16 @@ def mover_seleccion_personaje(delta):
     nuevo = max(0, min(len(opciones_personaje) - 1, indice_seleccionado + delta))
     if nuevo != indice_seleccionado:
         cambiar_personaje(opciones_personaje[nuevo])
+
+
+#ir a un escenario (los niveles de juego reinician sus patógenos)
+def ir_a_escenario(escenario):
+    from ACTIONS import juego  # import tardío: juego.py también importa este módulo
+    if escenario in juego.NIVELES:
+        juego.ir_a_nivel(juego.NIVELES.index(escenario))
+    else:
+        cambiar_escenario(escenario)
+    glutPostRedisplay()
 
 
 #confirmar el personaje elegido y entrar al juego
@@ -178,6 +190,7 @@ def keyboard(key, x, y):
 
     #JUEGO: ataque y movimiento (las teclas se sueltan en keyboard_up)
     elif key == b' ':
+        juego.tecla("fuego", True)
         juego.atacar()
     elif k in TECLAS_MOVIMIENTO:
         juego.tecla(TECLAS_MOVIMIENTO[k], True)
@@ -199,7 +212,7 @@ def keyboard(key, x, y):
     elif k in EXPRESIONES:
         cambiar_expresion(EXPRESIONES[k])
     elif k in ESCENARIOS:
-        cambiar_escenario(ESCENARIOS[k])
+        ir_a_escenario(ESCENARIOS[k])
 
     #OPCIONES
     elif k == b'v':
@@ -227,6 +240,8 @@ def keyboard_up(key, x, y):
     k = key.lower()
     if k in TECLAS_MOVIMIENTO:
         juego.tecla(TECLAS_MOVIMIENTO[k], False)
+    elif key == b' ':
+        juego.tecla("fuego", False)
 
 
 #teclas especiales
@@ -244,6 +259,8 @@ def special_keys(key, x, y):
     # En el juego las flechas mueven al personaje (la cámara se orbita con el ratón)
     if key in FLECHAS:
         juego.tecla(FLECHAS[key], True)
+    elif key in NIVELES_F:
+        ir_a_escenario(NIVELES_F[key])
     glutPostRedisplay()
 
 
@@ -301,7 +318,7 @@ def menu_callback(valor):
     elif 300 <= valor < 400:
         cambiar_movimiento(ETIQUETAS_MOVIMIENTO[valor - 300][1])
     elif 400 <= valor < 500:
-        cambiar_escenario(ETIQUETAS_ESCENARIO[valor - 400][1])
+        ir_a_escenario(ETIQUETAS_ESCENARIO[valor - 400][1])
     elif valor == 500:
         luz.alternar_luz()
     elif valor == 501:

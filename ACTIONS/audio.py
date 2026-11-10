@@ -5,13 +5,13 @@ os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
 
 import pygame
 from ACTIONS import state
+from RESOURCES import rutas
 
 # ============================================================
 # RUTAS
 # ============================================================
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(BASE_DIR)
-SOUNDS_DIR = os.path.join(PROJECT_ROOT, "UTILS", "SOUNDS")
+# Funciona igual en desarrollo y dentro del .exe de PyInstaller (sys._MEIPASS)
+SOUNDS_DIR = rutas.ruta_recurso("UTILS", "SOUNDS")
 
 # ============================================================
 # ARCHIVOS DE SONIDO
@@ -60,6 +60,8 @@ def init_audio():
         except (pygame.error, FileNotFoundError) as e:
             print(f"Error cargando sonido '{name}': {e}")
             state.sounds[name] = None
+    cargados = sum(1 for s in state.sounds.values() if s is not None)
+    print(f"Audio: {cargados} de {len(SOUND_FILES)} sonidos cargados desde {SOUNDS_DIR}")
 
 # ============================================================
 # REPRODUCIR Y DETENER SONIDOS

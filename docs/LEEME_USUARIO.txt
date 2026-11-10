@@ -1,0 +1,41 @@
+JUEGO INMUNOLÓGICO 3D  -  Instrucciones para el usuario final
+==============================================================
+
+No necesitas instalar Python ni ninguna librería.
+
+REQUISITOS
+  - Windows 10 u 11 de 64 bits.
+  - Tarjeta gráfica (o gráficos integrados) con controlador actualizado que soporte OpenGL 2.1 o superior.
+  - Unos 100 MB libres en disco y 2 GB de RAM como mínimo recomendado.
+  - Altavoces o audífonos (opcional: sin audio el juego funciona igual).
+
+INSTALACIÓN
+  1. Descomprime el archivo .zip en cualquier carpeta con permiso de escritura
+     (por ejemplo, el Escritorio o Documentos). No lo ejecutes desde dentro del .zip.
+  2. Haz doble clic en  JuegoInmunologico.exe
+  3. Si Windows muestra "Windows protegió su PC" (SmartScreen), pulsa
+     "Más información" y luego "Ejecutar de todas formas". El programa no está firmado
+     digitalmente porque es un proyecto escolar.
+  4. La primera vez puede tardar unos segundos en abrir: el programa se descomprime
+     en una carpeta temporal.
+
+CONTROLES
+  Menú de personajes: A / D o flechas = elegir | ENTER = confirmar | ESC = salir
+  Mover:              A D W S o flechas
+  Atacar:             ESPACIO (mantenerlo repite el ataque)
+  Saltar:             C (gasta energía)
+  Cámara:             ratón (arrastrar = orbitar, rueda = zoom) | R = reiniciar cámara
+  Ayuda en pantalla:  I = instrucciones | H = acerca de
+  Cambiar de nivel:   F1, F2, F3 (niveles 1, 2 y 3)
+  Pantallas finales:  ENTER = reiniciar o volver al menú | RETROCESO = menú
+  Salir:              ESC
+
+SI ALGO FALLA
+  - Junto al .exe se crea el archivo  juego_log.txt  con los mensajes del programa.
+    La línea "Audio: 14 de 14 sonidos cargados" indica que los recursos se encontraron.
+  - Pantalla negra o muy lento: actualiza el controlador de la tarjeta gráfica y, si tu
+    equipo tiene dos GPU, asigna el juego a la de alto rendimiento
+    (Configuración > Sistema > Pantalla > Gráficos).
+  - Se cierra al abrir: instala "Microsoft Visual C++ Redistributable 2015-2022 (x64)".
+  - Antivirus que bloquea el archivo: es un falso positivo habitual en programas
+    empaquetados con PyInstaller; agrega una excepción para la carpeta del juego.

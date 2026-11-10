@@ -26,8 +26,16 @@ def pulso_latido(t):
     return abs(math.sin(t * 4.0))
 
 
-#aplicar luces
-def aplicar_luces(t, escenario):
+# Atmósfera de cada nivel: luz ambiente global, ambiente y difusa de la luz principal
+ATMOSFERA = {
+    0: {"ambiente": (0.30, 0.10, 0.10), "amb0": (0.18, 0.08, 0.07), "difusa": (1.00, 0.72, 0.62)},
+    1: {"ambiente": (0.06, 0.14, 0.24), "amb0": (0.05, 0.12, 0.20), "difusa": (0.45, 0.75, 1.00)},
+    2: {"ambiente": (0.14, 0.20, 0.07), "amb0": (0.12, 0.18, 0.06), "difusa": (1.00, 0.93, 0.62)},
+}
+
+
+#aplicar luces (foco = posición x, z del jugador para la luz focalizada del vaso)
+def aplicar_luces(t, escenario, foco=None):
     glShadeModel(GL_SMOOTH if sombreado_suave else GL_FLAT)
 
     if not luz_activa:
@@ -35,24 +43,52 @@ def aplicar_luces(t, escenario):
         return
 
     glEnable(GL_LIGHTING)
+    atm = ATMOSFERA.get(escenario)
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, (*(atm["ambiente"] if atm else (0.18, 0.18, 0.20)), 1.0))
 
     # Luz principal
     glEnable(GL_LIGHT0)
     glLightfv(GL_LIGHT0, GL_POSITION, (0.0, 16.0, 8.0, 1.0))
-    glLightfv(GL_LIGHT0, GL_AMBIENT, (0.15, 0.15, 0.15, 1.0))
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.85, 0.80, 0.75, 1.0))
+    glLightfv(GL_LIGHT0, GL_AMBIENT, (*(atm["amb0"] if atm else (0.15, 0.15, 0.15)), 1.0))
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, (*(atm["difusa"] if atm else (0.85, 0.80, 0.75)), 1.0))
     glLightfv(GL_LIGHT0, GL_SPECULAR, (0.90, 0.90, 0.90, 1.0))
 
-    if escenario == 0 or escenario == "t":
+    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 180.0)
+    glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 1.0)
+    glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.04)
+    glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.004)
+
+    if escenario == 0:
+        # Corazón: luz roja que late
         pulso = 0.55 + 0.45 * pulso_latido(t)
         glEnable(GL_LIGHT1)
-        glLightfv(GL_LIGHT1, GL_POSITION, (0.0, 7.2, 0.0, 1.0) if escenario == 0 else (0.0, 9.0, -4.0, 1.0))
+        glLightfv(GL_LIGHT1, GL_POSITION, (0.0, 7.2, 0.0, 1.0))
         glLightfv(GL_LIGHT1, GL_AMBIENT, (0.0, 0.0, 0.0, 1.0))
         glLightfv(GL_LIGHT1, GL_DIFFUSE, (0.90 * pulso, 0.15 * pulso, 0.20 * pulso, 1.0))
         glLightfv(GL_LIGHT1, GL_SPECULAR, (0.80 * pulso, 0.20 * pulso, 0.20 * pulso, 1.0))
-        glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 1.0)
-        glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.04)
-        glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.004)
+    elif escenario == 1:
+        # Vaso sanguíneo: foco azul-cian que acompaña al jugador
+        fx_, fz_ = foco if foco else (0.0, 0.0)
+        k = 0.85 + 0.15 * math.sin(t * 2.0)
+        glEnable(GL_LIGHT1)
+        glLightfv(GL_LIGHT1, GL_POSITION, (fx_, 14.0, fz_ + 3.0, 1.0))
+        glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, (0.0, -1.0, -0.25))
+        glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 42.0)
+        glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 8.0)
+        glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.01)
+        glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.0)
+        glLightfv(GL_LIGHT1, GL_AMBIENT, (0.0, 0.0, 0.0, 1.0))
+        glLightfv(GL_LIGHT1, GL_DIFFUSE, (0.25 * k, 0.95 * k, 1.00 * k, 1.0))
+        glLightfv(GL_LIGHT1, GL_SPECULAR, (0.70 * k, 1.00 * k, 1.00 * k, 1.0))
+    elif escenario == 2:
+        # Ganglio linfático: luz dorada que respira despacio
+        k = 0.65 + 0.35 * math.sin(t * 1.5) ** 2
+        glEnable(GL_LIGHT1)
+        glLightfv(GL_LIGHT1, GL_POSITION, (0.0, 9.0, 0.0, 1.0))
+        glLightfv(GL_LIGHT1, GL_AMBIENT, (0.0, 0.0, 0.0, 1.0))
+        glLightfv(GL_LIGHT1, GL_DIFFUSE, (1.00 * k, 0.85 * k, 0.30 * k, 1.0))
+        glLightfv(GL_LIGHT1, GL_SPECULAR, (1.00 * k, 0.95 * k, 0.60 * k, 1.0))
+        glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.02)
     else:
         glDisable(GL_LIGHT1)
 

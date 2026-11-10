@@ -1,3 +1,4 @@
+import ctypes
 import math
 import textwrap
 from OpenGL.GL import *
@@ -10,25 +11,37 @@ from RESOURCES import iluminacion as luz
 from SCENS import objetos_biologicos as bio
 
 NOMBRES_ESCENARIO = {6: "Ángel", 7: "Diablo", 8: "Dark room", 9: "Home", 0: "Miocardio", "y": "Puzzle",
-                     "u": "Planetario", "t": "Vasos sanguíneos"}
+                     "u": "Planetario", 1: "Vaso sanguíneo", 2: "Ganglio linfático"}
 FUENTE = GLUT_BITMAP_HELVETICA_18  # type: ignore
 FUENTE_GRANDE = GLUT_BITMAP_TIMES_ROMAN_24  # type: ignore
 
 # Valores que siguen a la barra real para mostrar el "rastro" del daño
 _visible = {"salud": 1.0, "energia": 1.0}
 
+# Anchos de texto ya calculados (los mismos textos se miden en cada cuadro)
+_anchos = {}
+
 
 #texto 2D
 def draw_text_2D(x, y, text, r, g, b, fuente=FUENTE, a=1.0):
     glColor4f(r, g, b, a)
     glRasterPos2f(x, y)
-    for char in text:
-        glutBitmapCharacter(fuente, ord(char))
+    # Una sola llamada por línea (mucho más rápido que letra por letra desde Python)
+    glutBitmapString(fuente, text.encode("latin-1", "replace"))
 
 
 #ancho en píxeles de un texto
 def ancho_texto(texto, fuente=FUENTE):
-    return sum(glutBitmapWidth(fuente, ord(c)) for c in texto)
+    clave = (texto, fuente is FUENTE)
+    ancho = _anchos.get(clave)
+    if ancho is None:
+        datos = texto.encode("latin-1", "replace")
+        try:
+            ancho = glutBitmapLength(fuente, ctypes.cast(ctypes.c_char_p(datos), ctypes.POINTER(ctypes.c_ubyte)))
+        except Exception:
+            ancho = sum(glutBitmapWidth(fuente, b) for b in datos)
+        _anchos[clave] = ancho
+    return ancho
 
 
 #texto con sombra para que se lea sobre cualquier fondo
@@ -192,7 +205,7 @@ def _efectos_pantalla(width, height):
         _vineta(width, height, (0.9, 0.05, 0.05), j["dano_t"] / 0.5 * 0.6)
         if j["salud"] < 30.0:
             _vineta(width, height, (0.7, 0.0, 0.0), (0.18 + 0.12 * math.sin(t * 6.0)) * (1.0 - j["salud"] / 30.0) * 2.0)
-        if h.estado_escenario in (0, "t"):
+        if h.estado_escenario in (0, 1):
             _vineta(width, height, (0.5, 0.0, 0.05), 0.10 * luz.pulso_latido(t), 120)
     if combate.destello > 0.0:
         _rect(0, 0, width, height, 0.9, 0.85, 1.0, combate.destello * 0.35)
@@ -220,6 +233,15 @@ def _pantalla_final(width, height):
     pulso = 0.6 + 0.4 * math.sin(juego.t_fase * 4.0)
     pie = "[ENTER] Reiniciar   [RETROCESO] Menú   [ESC] Salir" if not victoria else "[ENTER] Volver al menú   [ESC] Salir"
     texto_centrado(height * 0.30 + 230, pie, (1.0, 1.0, 1.0), width, FUENTE, k * pulso)
+
+
+#fundido y título al entrar a un nivel
+def _transicion(width, height):
+    t = juego.transicion["t"]
+    if t <= 0.0:
+        return
+    _rect(0, 0, width, height, 0.0, 0.0, 0.0, min(1.0, t / 0.7))
+    texto_centrado(height * 0.46, juego.transicion["titulo"], (1.0, 0.9, 0.5), width, FUENTE_GRANDE, min(1.0, t / 0.5))
 
 
 #HUD completo
@@ -250,9 +272,9 @@ def draw_hud(width, height):
         _rect(10, 160, width - 20, 280, 0.0, 0.0, 0.0, 0.6)
         draw_text_2D(20, 184, "CONTROLES", 1, 0.85, 0.3)
         draw_text_2D(20, 210, "Mover: A/D o flechas izq/der = lados | W/S o flechas arriba/abajo = avanzar y retroceder", 1, 1, 1)
-        draw_text_2D(20, 236, "ESPACIO = ataque especial (gasta energía) | C = saltar (gasta energía) | Ratón: arrastrar = orbitar, rueda = zoom", 1, 1, 1)
+        draw_text_2D(20, 236, "ESPACIO = atacar (mantener = repetir) | C = saltar (gasta energía) | Ratón: arrastrar = orbitar, rueda = zoom", 1, 1, 1)
         draw_text_2D(20, 262, "Objetivo: elimina todos los patógenos y cruza la salida luminosa | Eritrocito = salud | ATP = energía | Anticuerpo = marca", 1, 1, 1)
-        draw_text_2D(20, 288, "Depuración: Z/X/G/B/N/M/,/. movimientos | 1-5 Q J expresiones | 6 7 8 9 0 Y U T escenarios", 1, 1, 1)
+        draw_text_2D(20, 288, "Depuración: Z/X/G/B/N/M/,/. movimientos | 1-5 Q J expresiones | 6 7 8 9 Y U salas | F1 F2 F3 (o 0 y T) = niveles 1 2 3", 1, 1, 1)
         draw_text_2D(20, 314, "K personaje | V hitboxes | L luz | F sombreado | O sombras | E reacciones | P sonido | R cámara | ESC salir", 1, 1, 1)
 
         # A la derecha: en la columna izquierda se encimaría con el panel de estado
@@ -260,6 +282,7 @@ def draw_hud(width, height):
         draw_panel_estado(height)
 
     _pantalla_final(width, height)
+    _transicion(width, height)
 
     glPopMatrix()
     glMatrixMode(GL_PROJECTION)

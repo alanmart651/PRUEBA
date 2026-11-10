@@ -2,12 +2,15 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 import math
+import os
 import sys
+import tempfile
 import time
 from CHARACTERS import personajes
 from RESOURCES import HandLes as h
 from RESOURCES import iluminacion as luz
 from RESOURCES import hud
+from RESOURCES import rutas
 from RESOURCES import visual as v
 from SCENS import saladeangel as sala_angel
 from SCENS import saladeldiablo as sala_diablo
@@ -20,6 +23,7 @@ from SCENS import heartroom as heart
 from SCENS import salapuzle as sala
 from SCENS import salaplanetarium as planetario
 from SCENS import vasos
+from SCENS import escenario_linfatico as linfatico
 from SCENS import objetos_biologicos as bio
 from SCENS import efectos as fx
 from SCENS import menu_seleccion as menu
@@ -28,7 +32,7 @@ width = 1240
 height = 680
 
 # Fondo y niebla de los escenarios orgánicos: (color, densidad)
-AMBIENTES = {0: ((0.10, 0.01, 0.02), 0.013), "t": ((0.12, 0.02, 0.04), 0.012)}
+AMBIENTES = {0: ((0.10, 0.01, 0.02), 0.013), 1: ((0.01, 0.04, 0.10), 0.013), 2: ((0.05, 0.08, 0.02), 0.016)}
 
 ultimo_t = time.time()
 
@@ -124,7 +128,10 @@ def display():
 
     t = ahora
     salto = juego.altura_salto(t)
-    luz.aplicar_luces(t, h.estado_escenario)
+    luz.aplicar_luces(t, h.estado_escenario, (j["x"], j["z"]))
+
+    # Material base húmedo y brillante para cualquier escenario (los niveles lo ajustan)
+    v.material(60.0, 0.5)
 
     # Escenarios
     if h.estado_escenario == 6:
@@ -137,14 +144,16 @@ def display():
         home.draw_home_room()
     elif h.estado_escenario == 0:
         heart.draw_moms_heart_room()
-    elif h.estado_escenario == "t":
+    elif h.estado_escenario == 1:
         vasos.draw_vessel_room(t)
+    elif h.estado_escenario == 2:
+        linfatico.draw_lymph_room(t)
     elif h.estado_escenario == "y":
         sala.draw_puzzle_room()
     elif h.estado_escenario == "u":
         planetario.draw_planetarium_room()
 
-    luz.aplicar_luces(t, h.estado_escenario)
+    luz.aplicar_luces(t, h.estado_escenario, (j["x"], j["z"]))
 
     # Sombras
     luz.dibujar_sombra(j["x"], j["z"], 1.3, salto)
@@ -183,8 +192,22 @@ def reshape(w, h_win):
     glMatrixMode(GL_MODELVIEW)
 
 
+#registro de mensajes: el .exe no tiene consola, así que los errores se guardan en juego_log.txt
+def configurar_registro():
+    if not rutas.es_ejecutable():
+        return
+    for carpeta in (rutas.carpeta_ejecutable(), tempfile.gettempdir()):
+        try:
+            sys.stdout = sys.stderr = open(os.path.join(carpeta, "juego_log.txt"), "w", buffering=1, encoding="utf-8")
+            break
+        except OSError:
+            continue
+    print("Recursos en:", rutas.carpeta_base())
+
+
 #main
 def main():
+    configurar_registro()
     glutInit(sys.argv)
     # Al salir (ESC o cerrar la ventana) glutMainLoop regresa para poder cerrar el audio
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION)
