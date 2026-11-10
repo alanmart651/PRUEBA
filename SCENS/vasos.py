@@ -23,6 +23,9 @@ for _i in range(34):
                      "giro": _rng.uniform(30, 90), "tipo": "eritro" if _i < 22 else "plaqueta"})
 _plasma = [(_rng.uniform(-9.5, 9.5), _rng.uniform(0.5, 8.0), _rng.uniform(0, 2 * LARGO), _rng.uniform(4.0, 8.0))
            for _ in range(60)]
+# Líneas de corriente sobre el piso: x, desfase, velocidad, largo, ancho
+_corrientes = [(_rng.uniform(-9.5, 9.5), _rng.uniform(0, 2 * LARGO), _rng.uniform(5.0, 10.0),
+                _rng.uniform(2.5, 5.0), _rng.uniform(0.12, 0.3)) for _ in range(44)]
 
 
 # Inicia: geometría fija del túnel y del piso (se compila una sola vez)
@@ -33,7 +36,7 @@ def _construir():
     th1 = math.pi - th0
     nt, nz = 36, 20
 
-    # Pared del vaso (endotelio con mosaico de células)
+    # Pared del vaso (endotelio azulado con mosaico de células)
     for i in range(nt):
         glBegin(GL_QUAD_STRIP)
         for j in range(nz + 1):
@@ -41,12 +44,12 @@ def _construir():
             for di in (0, 1):
                 a = th0 + (th1 - th0) * (i + di) / nt
                 k = 0.80 + 0.20 * math.sin((i + di) * 1.9 + j * 1.3) * math.sin(j * 0.7 + (i + di) * 0.5)
-                glColor3f(0.78 * k, 0.22 * k, 0.26 * k)
+                glColor3f(0.30 * k, 0.36 * k, 0.66 * k)
                 glNormal3f(-math.cos(a), -math.sin(a), 0.0)
                 glVertex3f(R * math.cos(a), CY + R * math.sin(a), z)
         glEnd()
 
-    # Piso
+    # Piso (mosaico de células endoteliales)
     ancho = R * math.cos(th0)
     nx = 14
     glNormal3f(0.0, 1.0, 0.0)
@@ -54,7 +57,7 @@ def _construir():
     for i in range(nx):
         for j in range(nz):
             k = 0.78 + 0.22 * (((i + j) % 2) * 0.5 + 0.5 * math.sin(i * 1.7 + j * 2.3))
-            glColor3f(0.62 * k, 0.15 * k, 0.19 * k)
+            glColor3f(0.20 * k, 0.30 * k, 0.56 * k)
             x0, x1 = -ancho + 2 * ancho * i / nx, -ancho + 2 * ancho * (i + 1) / nx
             z0, z1 = -LARGO + 2 * LARGO * j / nz, -LARGO + 2 * LARGO * (j + 1) / nz
             glVertex3f(x0, 0.0, z0)
@@ -64,7 +67,7 @@ def _construir():
     glEnd()
 
     # Fondo oscuro del vaso
-    glColor3f(0.06, 0.01, 0.03)
+    glColor3f(0.02, 0.03, 0.08)
     glNormal3f(0.0, 0.0, 1.0)
     glBegin(GL_TRIANGLE_FAN)
     glVertex3f(0.0, CY, -LARGO)
@@ -96,12 +99,29 @@ def _plaqueta(t, c):
     glPushMatrix()
     glTranslatef(c["x"], c["y"], z)
     glScalef(1.0, 0.55, 0.8)
-    glColor3f(0.95, 0.78, 0.66)
+    glColor3f(0.95, 0.85, 0.80)
     glutSolidSphere(0.16, 8, 8)
     glPopMatrix()
 
 
-# Inicia: dibujo del escenario de vasos sanguíneos
+# Inicia: líneas de corriente que recorren el piso hacia la cámara
+def _corriente(t):
+    v.iniciar_aditivo()
+    for x0, fase, vel, largo, ancho in _corrientes:
+        cabeza = ((fase + t * vel) % (2 * LARGO)) - LARGO
+        glBegin(GL_QUAD_STRIP)
+        for i in range(7):
+            z = cabeza - largo * (1.0 - i / 6.0) * 1.0
+            x = x0 + 0.35 * math.sin(z * 0.7 + fase)
+            alfa = 0.55 * (i / 6.0) ** 1.5
+            glColor4f(0.45, 0.9, 1.0, alfa)
+            glVertex3f(x - ancho, 0.04, z)
+            glVertex3f(x + ancho, 0.04, z)
+        glEnd()
+    v.terminar_transparencia()
+
+
+# Inicia: dibujo del escenario del vaso sanguíneo
 def draw_vessel_room(t):
     global _lista
     if _lista is None:
@@ -111,23 +131,25 @@ def draw_vessel_room(t):
     glPushMatrix()
     glScalef(1.8, 1.8, 1.8)
 
-    # La pared "late" un poco con el corazón
+    # La pared "late" un poco con el corazón; aspecto húmedo con brillo especular alto
     glPushMatrix()
     s = 1.0 + 0.012 * latido
     glScalef(s, s, 1.0)
-    v.material(70.0, 0.55, (0.05 + 0.08 * latido, 0.0, 0.01))
+    v.material(80.0, 0.7, (0.0, 0.03 + 0.05 * latido, 0.08 + 0.06 * latido))
     glCallList(_lista)
     glPopMatrix()
-    v.material(48.0, 0.35)
 
     # Células en la corriente (el flujo va hacia la cámara)
-    v.material(45.0, 0.5)
+    v.material(60.0, 0.6)
     for c in _celulas:
         if c["tipo"] == "eritro":
             _eritrocito(t, c)
         else:
             _plaqueta(t, c)
     v.material(48.0, 0.35)
+
+    # Corriente en el piso
+    _corriente(t)
 
     # Plasma: partículas brillantes que corren con la sangre
     v.iniciar_aditivo()
@@ -136,7 +158,7 @@ def draw_vessel_room(t):
     glBegin(GL_POINTS)
     for x, y, f, vel in _plasma:
         z = ((f + t * vel) % (2 * LARGO)) - LARGO
-        glColor4f(1.0, 0.55, 0.5, 0.55)
+        glColor4f(0.5, 0.9, 1.0, 0.6)
         glVertex3f(x, y, z)
     glEnd()
     v.terminar_transparencia()

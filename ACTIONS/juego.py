@@ -10,34 +10,36 @@ from RESOURCES import visual as v
 from SCENS import objetos_biologicos as bio
 from SCENS import efectos as fx
 
-NIVELES = [0, "t"]               # miocardio y vasos sanguíneos
+NIVELES = [0, 1, 2]              # miocardio, vaso sanguíneo y ganglio linfático
 RADIO_JUGADOR = 1.2
 SALIDA = (11.0, -14.0)
 RADIO_SALIDA = 2.6
 SALUD_MAX = 100.0
 ENERGIA_MAX = 100.0
 ENERGIA_SALTO = 5.0
+VEL_FACTOR = 1.28               # todos los personajes se mueven 28 % más rápido
 INVULNERABLE = 0.9
 INICIO = (0.0, 12.0)
 
 # Tabla de balance: velocidad (unidades/s), daño del ataque, defensa (multiplica el daño recibido),
 # costo de energía por ataque, enfriamiento, recarga pasiva, si cura con eritrocitos y si tiene escudo
 ESTADISTICAS = {
-    "isaac": {"celula": "Macrófago", "vel": 8.0, "dano": 30, "defensa": 0.6, "costo": 20, "cooldown": 0.7,
+    "isaac": {"celula": "Macrófago", "vel": 8.0, "dano": 22, "defensa": 0.6, "costo": 6, "cooldown": 0.3,
               "regen": 3.0, "cura": True, "escudo": False, "prob_eri": 0.15},
-    "azazel": {"celula": "Linfocito T citotóxico", "vel": 9.5, "dano": 70, "defensa": 1.0, "costo": 20,
-               "cooldown": 0.55, "regen": 3.0, "cura": True, "escudo": False, "prob_eri": 0.15},
+    "azazel": {"celula": "Linfocito T citotóxico", "vel": 9.5, "dano": 70, "defensa": 1.0, "costo": 24,
+               "cooldown": 0.9, "regen": 3.0, "cura": True, "escudo": False, "prob_eri": 0.15},
     "chispa": {"celula": "Célula dendrítica", "vel": 12.5, "dano": 8, "defensa": 1.35, "costo": 10,
                "cooldown": 0.6, "regen": 2.5, "cura": True, "escudo": False, "prob_eri": 0.15},
     "mapi": {"celula": "Linfocito B de memoria", "vel": 8.0, "dano": 28, "defensa": 1.3, "costo": 18,
              "cooldown": 0.4, "regen": 3.0, "cura": True, "escudo": False, "prob_eri": 0.15},
     "brote": {"celula": "Fibroblasto cardiaco", "vel": 8.0, "dano": 10, "defensa": 1.0, "costo": 10,
               "cooldown": 0.5, "regen": 3.5, "cura": True, "escudo": False, "prob_eri": 0.55},
-    "perno": {"celula": "Nanobot de inmunoterapia", "vel": 6.0, "dano": 9999, "defensa": 1.0, "costo": 48,
+    "perno": {"celula": "Nanobot de inmunoterapia", "vel": 6.0, "dano": 9999, "defensa": 1.0, "costo": 30,
               "cooldown": 0.9, "regen": 2.0, "cura": False, "escudo": True, "prob_eri": 0.15},
 }
 
 DATOS_CURIOSOS = [
+    "Los ganglios linfáticos filtran la linfa y concentran linfocitos para responder rápido a las infecciones.",
     "Los eritrocitos no tienen núcleo: así dejan más espacio para la hemoglobina que transporta oxígeno.",
     "Los anticuerpos tienen forma de Y: las puntas reconocen al antígeno y el tallo avisa a otras células.",
     "Los linfocitos B de memoria recuerdan un antígeno por años; así funcionan las vacunas.",
@@ -61,6 +63,7 @@ jugador = {"x": INICIO[0], "z": INICIO[1], "ang": 180.0, "salud": SALUD_MAX, "en
            "aviso": "", "aviso_t": 0.0, "moviendo": False}
 
 _polen_t = 0.0
+transicion = {"t": 0.0, "titulo": ""}   # fundido y título al cambiar de nivel
 _iniciada = False
 
 
@@ -94,6 +97,7 @@ def iniciar_partida(personaje):
     _poner_jugador(personaje)
     bio.iniciar_nivel(NIVELES[0])
     avisar("Elimina a los patógenos y cruza la salida", 4.0)
+    transicion.update(t=1.2, titulo="NIVEL 1 - MIOCARDIO")
 
 
 def _poner_jugador(personaje):
@@ -183,8 +187,8 @@ def _mover(dt, st):
     if j["moviendo"]:
         n = math.hypot(dx, dz)
         dx, dz = dx / n, dz / n
-        j["x"] += dx * st["vel"] * dt
-        j["z"] += dz * st["vel"] * dt
+        j["x"] += dx * st["vel"] * VEL_FACTOR * dt
+        j["z"] += dz * st["vel"] * VEL_FACTOR * dt
         objetivo = math.degrees(math.atan2(dx, dz))
         diff = (objetivo - j["ang"] + 180.0) % 360.0 - 180.0
         j["ang"] += diff * min(1.0, 14.0 * dt)
@@ -250,19 +254,35 @@ def _procesar_eventos(st):
             play_sound("reiniciar")
 
 
+NOMBRES_NIVEL = {0: "MIOCARDIO", 1: "VASO SANGUÍNEO", 2: "GANGLIO LINFÁTICO"}
+
+
+# Inicia: saltar a un nivel (al limpiar la sala o con la tecla de cambio de nivel)
+def ir_a_nivel(indice):
+    global nivel, salida_activa
+    if not _iniciada:
+        iniciar_partida(h.personaje_actual)
+    if fase != "JUGANDO" or not 0 <= indice < len(NIVELES):
+        return
+    nivel = indice
+    salida_activa = False
+    h.estado_escenario = NIVELES[nivel]
+    bio.iniciar_nivel(NIVELES[nivel])
+    combate.limpiar()
+    jugador["x"], jugador["z"] = INICIO
+    titulo = f"NIVEL {nivel + 1} - {NOMBRES_NIVEL[NIVELES[nivel]]}"
+    avisar("Elimina a los patógenos y cruza la salida", 3.0)
+    transicion.update(t=1.2, titulo=titulo)
+    jugador["inv"] = 1.2   # a salvo durante el fundido
+
+
 # Inicia: pasar al siguiente escenario o ganar
 def _avanzar():
     global nivel, fase, t_fase, salida_activa, dato
     if nivel + 1 < len(NIVELES):
-        nivel += 1
-        salida_activa = False
-        h.estado_escenario = NIVELES[nivel]
-        bio.iniciar_nivel(NIVELES[nivel])
-        combate.limpiar()
-        jugador["x"], jugador["z"] = INICIO
+        ir_a_nivel(nivel + 1)
         if h.personaje_actual == "perno":
             jugador["salud"] = SALUD_MAX
-        avisar("Nuevo escenario: vasos sanguíneos", 3.0)
         play_sound("cambiarcolor")
     else:
         fase = "VICTORIA"
@@ -290,6 +310,7 @@ def actualizar(dt, t):
         iniciar_partida(h.personaje_actual)
     j = jugador
     st = stats()
+    transicion["t"] = max(0.0, transicion["t"] - dt)
     for clave in ("inv", "cd", "ataque_t", "marcado_t", "dano_t", "cura_t", "aviso_t"):
         j[clave] = max(0.0, j[clave] - dt)
     mensaje[1] = max(0.0, mensaje[1] - dt)
@@ -317,10 +338,14 @@ def actualizar(dt, t):
             _polen_t = 0.12
             fx.flotar((j["x"], 1.2, j["z"]), (1.0, 0.9, 0.3), 1, 1.6, 5.0)
 
+    # Disparo sostenido: mientras se mantiene ESPACIO se repite el ataque (el enfriamiento lo limita)
+    if "fuego" in teclas:
+        combate.atacar(j, st, h.personaje_actual)
+
     bio.config["prob_eri"] = st["prob_eri"]
     bio.actualizar(dt, t, j["x"], j["z"], bio.ALTURA_CENTRO + altura_salto(t), RADIO_JUGADOR)
     _procesar_eventos(st)
-    combate.actualizar(dt)
+    combate.actualizar(dt, j)
 
     if j["salud"] <= 0.0:
         j["salud"] = 0.0

@@ -1,0 +1,474 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Generación y distribución de un videojuego 3D en PyOpenGL</title><style>
+@page { size: Letter; margin: 22mm 20mm 22mm 20mm;
+        @bottom-center { content: counter(page); font: 10pt 'Segoe UI', Arial, sans-serif; color: #555; } }
+body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #1a1a1a; }
+h1 { font-size: 22pt; text-align: center; margin: 14mm 0 8mm; color: #1d3557; }
+h2 { font-size: 16pt; color: #1d3557; border-bottom: 2px solid #1d3557; padding-bottom: 3px; margin-top: 0; }
+h3 { font-size: 12.5pt; color: #264a73; margin-top: 18px; }
+.portada { text-align: center; padding-top: 30mm; font-size: 13pt; }
+.portada table { margin: 12mm auto 0; width: 80%; text-align: left; }
+.portada table th { display: none; }
+.salto { page-break-after: always; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0 14px; font-size: 10pt; page-break-inside: auto; }
+th { background: #1d3557; color: #fff; text-align: left; }
+th, td { border: 1px solid #b8c2cc; padding: 5px 8px; vertical-align: top; }
+tr { page-break-inside: avoid; }
+tbody tr:nth-child(even) td { background: #f3f6f9; }
+code { font-family: Consolas, 'Courier New', monospace; font-size: 9.5pt; background: #eef1f4; padding: 1px 4px; border-radius: 3px; }
+pre { background: #f4f6f8; border: 1px solid #d3dae1; border-left: 4px solid #1d3557; padding: 9px 12px;
+      font-size: 9pt; line-height: 1.35; white-space: pre-wrap; page-break-inside: avoid; }
+pre code { background: none; padding: 0; font-size: 9pt; }
+li { margin: 2px 0; }
+</style></head><body><div class="portada">
+<p><strong>INSTITUTO TECNOLÓGICO DE TOLUCA</strong></p>
+<p><strong>Tópicos Avanzados de Programación</strong></p>
+<h1>Generación y distribución de un videojuego 3D en PyOpenGL como ejecutable de Windows</h1>
+<p>Reporte de práctica</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Alumno(s):</strong></td>
+<td>[Nombre completo y número de control]</td>
+</tr>
+<tr>
+<td><strong>Docente:</strong></td>
+<td>[Nombre del docente]</td>
+</tr>
+<tr>
+<td><strong>Proyecto:</strong></td>
+<td>Juego inmunológico 3D (Python, PyOpenGL, GLUT y pygame-ce)</td>
+</tr>
+<tr>
+<td><strong>Fecha:</strong></td>
+<td>[Fecha de entrega]</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="salto"></div>
+
+<h2>2. Índice y requisitos previos del sistema</h2>
+<h3>2.1 Índice</h3>
+<ol>
+<li>Portada</li>
+<li>Índice y requisitos previos del sistema</li>
+<li>Guía paso a paso: generación del ejecutable</li>
+<li>Manual de instalación y ejecución (usuario final)</li>
+<li>Solución de problemas comunes</li>
+<li>Conclusiones y anexos<ul>
+<li>Anexo A. Estructura de carpetas resultante en <code>dist/</code></li>
+<li>Anexo B. Resumen de comandos de compilación</li>
+</ul>
+</li>
+</ol>
+<h3>2.2 Requisitos de hardware</h3>
+<p>El juego usa el <em>pipeline</em> de función fija de OpenGL (modo inmediato, iluminación con <code>GL_LIGHTING</code>, niebla con <code>GL_FOG</code> y listas de visualización), por lo que no requiere <em>shaders</em> ni una GPU moderna. Los valores siguientes son recomendaciones; el programa se probó únicamente en el equipo descrito al final de esta sección.</p>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Mínimo recomendado</th>
+<th>Observaciones</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GPU</td>
+<td>Compatible con OpenGL 2.1 o superior</td>
+<td>Basta con los gráficos integrados (Intel, AMD o NVIDIA) con controlador del fabricante. Un controlador genérico de Windows solo ofrece OpenGL 1.1 por software y el juego iría muy lento.</td>
+</tr>
+<tr>
+<td>Memoria RAM</td>
+<td>2 GB</td>
+<td>El ejecutable de un solo archivo se descomprime en memoria y en disco temporal al arrancar.</td>
+</tr>
+<tr>
+<td>Almacenamiento</td>
+<td>100 MB libres</td>
+<td>El <code>.exe</code> pesa 29.2 MB; al ejecutarse extrae unos 50 MB en una carpeta temporal.</td>
+</tr>
+<tr>
+<td>Sistema operativo</td>
+<td>Windows 10 u 11, 64 bits</td>
+<td>El ejecutable se generó para Windows x64.</td>
+</tr>
+<tr>
+<td>Audio</td>
+<td>Opcional</td>
+<td>Sin dispositivo de audio el juego sigue funcionando sin sonido.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Equipo de pruebas de este reporte:</strong> Windows 11 de 64 bits, GPU Intel(R) UHD Graphics con controlador 31.0.101.5186 (OpenGL 4.6 con perfil de compatibilidad).</p>
+<h3>2.3 Entorno de desarrollo</h3>
+<table>
+<thead>
+<tr>
+<th>Herramienta</th>
+<th>Versión utilizada</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>3.14.7 (64 bits)</td>
+<td>Intérprete del proyecto.</td>
+</tr>
+<tr>
+<td>PyOpenGL</td>
+<td>3.1.10</td>
+<td>Enlace de Python con OpenGL, GLU y GLUT.</td>
+</tr>
+<tr>
+<td>pygame-ce</td>
+<td>2.5.8 (SDL 2.32.10)</td>
+<td>Reproducción de audio (<code>pygame.mixer</code>).</td>
+</tr>
+<tr>
+<td>PyInstaller</td>
+<td>6.22.3</td>
+<td>Empaquetado del programa en un ejecutable.</td>
+</tr>
+<tr>
+<td>pyinstaller-hooks-contrib</td>
+<td>2026.10</td>
+<td>Reglas ("hooks") que indican a PyInstaller qué archivos necesitan PyOpenGL y pygame.</td>
+</tr>
+</tbody>
+</table>
+<p>El proyecto incluye dos archivos de dependencias: <code>requirements.txt</code> (solo lo necesario para ejecutar el juego: <code>PyOpenGL==3.1.10</code> y <code>pygame-ce==2.5.8</code>) y <code>requirements-build.txt</code> (lo anterior más <code>pyinstaller&gt;=6.16</code>; la versión usada fue la 6.22.3, que soporta Python 3.14).</p>
+<div class="salto"></div>
+
+<h2>3. Guía paso a paso: generación del ejecutable</h2>
+<h3>3.1 Cómo funciona PyInstaller</h3>
+<p>Python es un lenguaje interpretado: el código fuente se traduce a <em>bytecode</em> (archivos <code>.pyc</code>) que ejecuta la máquina virtual de Python. PyInstaller <strong>no convierte el programa a código de máquina</strong>; lo que hace es reunir en un solo lugar todo lo que el programa necesita para funcionar y construir un lanzador ejecutable. El proceso tiene cuatro etapas:</p>
+<ol>
+<li><strong>Análisis (<code>Analysis</code>).</strong> Parte del script principal (<code>main.py</code>) y recorre recursivamente las instrucciones <code>import</code> para construir un grafo de dependencias. También rastrea las DLL que necesitan los módulos binarios encontrados (por ejemplo <code>SDL2.dll</code> para pygame).</li>
+<li><strong>Archivo <code>PYZ</code>.</strong> Los módulos de Python encontrados se compilan a <em>bytecode</em> y se guardan comprimidos en un archivo con formato propio.</li>
+<li><strong>Archivo <code>PKG</code>.</strong> Se agrupan el script, el <code>PYZ</code>, las bibliotecas dinámicas y los archivos de datos (en este proyecto, los sonidos).</li>
+<li><strong>Ejecutable (<code>EXE</code>).</strong> Se toma un programa muy pequeño llamado <em>bootloader</em> (<code>runw.exe</code>, la variante sin consola) y se le adjunta el <code>PKG</code>.</li>
+</ol>
+<p>Al ejecutar el <code>.exe</code> el <em>bootloader</em> prepara el entorno, carga el intérprete de Python incluido (<code>python314.dll</code>) y lanza el script. Existen dos modalidades de distribución:</p>
+<table>
+<thead>
+<tr>
+<th>Modalidad</th>
+<th>Resultado</th>
+<th>Ventajas</th>
+<th>Desventajas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Un solo archivo</strong> (<code>onefile</code>)</td>
+<td><code>dist/JuegoInmunologico.exe</code> (29.2 MB)</td>
+<td>Se entrega un único archivo.</td>
+<td>En cada arranque se descomprime en <code>%TEMP%\_MEIxxxxx</code> (arranque más lento) y los antivirus lo marcan con más frecuencia.</td>
+</tr>
+<tr>
+<td><strong>Carpeta</strong> (<code>onedir</code>)</td>
+<td><code>dist/JuegoInmunologico/</code> (50.6 MB)</td>
+<td>Arranca más rápido y es más fácil de depurar.</td>
+<td>Hay que entregar toda la carpeta.</td>
+</tr>
+</tbody>
+</table>
+<p>Dos propiedades de un programa empaquetado importan para el código fuente: PyInstaller define <code>sys.frozen = True</code> y, en la modalidad de un solo archivo, <code>sys._MEIPASS</code> apunta a la carpeta temporal donde se extrajeron los recursos.</p>
+<h3>3.2 Preparación del código fuente</h3>
+<p><strong>a) Rutas dinámicas de recursos.</strong> El único módulo que leía archivos del disco era <code>ACTIONS/audio.py</code>, y calculaba la ruta con <code>__file__</code>. Dentro del ejecutable esa ruta ya no existe, así que se creó el módulo <code>RESOURCES/rutas.py</code>:</p>
+<pre><code class="language-python">def es_ejecutable():
+    return getattr(sys, &quot;frozen&quot;, False)
+
+def carpeta_base():
+    if es_ejecutable():
+        return getattr(sys, &quot;_MEIPASS&quot;, os.path.dirname(sys.executable))
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+def ruta_recurso(*partes):
+    return os.path.join(carpeta_base(), *partes)
+</code></pre>
+<p>Y <code>audio.py</code> pasó de usar <code>__file__</code> a:</p>
+<pre><code class="language-python">SOUNDS_DIR = rutas.ruta_recurso(&quot;UTILS&quot;, &quot;SOUNDS&quot;)
+</code></pre>
+<p>La misma línea funciona en desarrollo (raíz del proyecto), en el <code>.exe</code> de un solo archivo (<code>sys._MEIPASS</code>) y en la carpeta (<code>dist/JuegoInmunologico/_internal</code>).</p>
+<p><strong>b) Registro de mensajes.</strong> El ejecutable se construye sin ventana de consola (<code>console=False</code>), por lo que cualquier error sería invisible. <code>main.py</code> incluye la función <code>configurar_registro()</code>, que dentro del <code>.exe</code> redirige <code>stdout</code> y <code>stderr</code> al archivo <code>juego_log.txt</code> (junto al <code>.exe</code>, o en la carpeta temporal si no hay permiso de escritura). Además, <code>init_audio()</code> escribe cuántos sonidos se cargaron, lo que permite comprobar de inmediato que los recursos se encontraron:</p>
+<pre><code>Recursos en: C:\Users\...\Temp\_MEI000034302
+Audio: 14 de 14 sonidos cargados desde C:\Users\...\_MEI000034302\UTILS\SOUNDS
+</code></pre>
+<h3>3.3 El archivo <code>main.spec</code></h3>
+<p>El archivo <code>.spec</code> es el "plano" de la compilación: es un script de Python que PyInstaller ejecuta. Sus partes principales son:</p>
+<ol>
+<li><strong>Módulos propios (<code>hiddenimports</code>).</strong> Las carpetas <code>ACTIONS</code>, <code>CHARACTERS</code>, <code>RESOURCES</code> y <code>SCENS</code> no tienen <code>__init__.py</code> (son paquetes de espacio de nombres), así que el análisis automático puede omitirlas. El <code>.spec</code> lista cada <code>.py</code> de esas carpetas, excepto cuatro módulos que el juego no usa (<code>camera</code>, <code>colisiones</code>, <code>primitivas</code> y <code>Azazel_Lighting</code>).</li>
+<li><strong>Recursos (<code>datas</code>).</strong> Se copia la carpeta <code>UTILS/SOUNDS</code> (23 archivos, 14 MB) conservando su ruta relativa.</li>
+<li><strong>DLL de GLUT.</strong> PyOpenGL carga <code>freeglut</code> mediante <code>ctypes</code> en tiempo de ejecución, por lo que el análisis de importaciones no la ve. El <code>.spec</code> agrega explícitamente <code>freeglut64*.dll</code> en <code>OpenGL/DLLS</code> (el <em>hook</em> de PyOpenGL también las incluye; la doble indicación es una medida de seguridad).</li>
+<li><strong>Exclusiones.</strong> Se excluyen <code>numpy</code>, <code>tkinter</code>, <code>PIL</code> y otros módulos que el juego no usa. Sin numpy, PyOpenGL emplea sus propias matrices de <code>ctypes</code> y escribe en el registro un aviso informativo (<code>Unable to import OpenGL.arrays.numpymodule.NumpyHandler</code>) que <strong>no es un error</strong>.</li>
+<li><strong>Modalidad.</strong> La variable de entorno <code>ONEFILE</code> decide entre un solo archivo (por defecto) y carpeta (<code>ONEFILE=0</code>).</li>
+</ol>
+<h3>3.4 Comando de compilación</h3>
+<p>Desde la raíz del proyecto se ejecuta el script <code>construir_exe.bat</code>, que crea un entorno virtual limpio (<code>.venv</code>), instala las dependencias y llama a PyInstaller:</p>
+<pre><code>construir_exe.bat            :: un solo archivo  -&gt; dist\JuegoInmunologico.exe
+construir_exe.bat carpeta    :: carpeta          -&gt; dist\JuegoInmunologico\
+</code></pre>
+<p>Si el comando <code>python</code> abre la Microsoft Store (alias de Windows sin Python instalado), se indica el intérprete real antes de ejecutar el script:</p>
+<pre><code>set PYTHON=C:\ruta\a\python.exe
+</code></pre>
+<p>El comando que ejecuta el script en su último paso, y que puede usarse directamente, es:</p>
+<pre><code>.venv\Scripts\python.exe -m PyInstaller main.spec --noconfirm --clean
+</code></pre>
+<p>La compilación tardó unos 30 segundos y terminó sin errores (<code>Build complete!</code>).</p>
+<h3>3.5 Verificación del resultado</h3>
+<ol>
+<li><strong>Contenido de <code>dist/</code>.</strong> Se obtuvo <code>JuegoInmunologico.exe</code> (29.2 MB) y, con la modalidad carpeta, <code>JuegoInmunologico/</code> (50.6 MB). La estructura completa está en el Anexo A.</li>
+<li><strong>Ejecución.</strong> Se lanzaron ambas modalidades y se comprobó que la ventana "Isaac" se abre y muestra el menú de selección con los seis personajes.</li>
+<li><strong>Partida completa dentro del ejecutable.</strong> Se enviaron teclas a la ventana (elegir personaje, <code>ENTER</code>, <code>F2</code>, <code>F3</code>) y se verificó que se dibujan el nivel del vaso sanguíneo y el del ganglio linfático, con iluminación, niebla, HUD y enemigos.</li>
+<li><strong>Recursos.</strong> El registro confirmó <code>Audio: 14 de 14 sonidos cargados</code>, tanto desde <code>sys._MEIPASS</code> (un solo archivo) como desde <code>_internal</code> (carpeta).</li>
+<li><strong>Sin Python en la máquina de destino.</strong> El ejecutable no depende del Python instalado: incluye <code>python314.dll</code>, <code>SDL2.dll</code> y <code>freeglut64.vc14.dll</code>.</li>
+</ol>
+<p>Una advertencia de la propia compilación ayudó a detectar un error de otra naturaleza: en una prueba intermedia el ejecutable dibujaba el nivel 3 sin escenario. La causa no fue PyInstaller sino que el editor de código había guardado una versión antigua de <code>main.py</code> encima de la actual. Se detectó comparando el resultado del ejecutable con la ejecución en modo desarrollo, y se corrigió reaplicando los cambios y recompilando. La lección práctica es <strong>recompilar y volver a probar el ejecutable cada vez que cambia el código fuente</strong>.</p>
+<div class="salto"></div>
+
+<h2>4. Manual de instalación y ejecución (para el usuario final)</h2>
+<p>Esta sección está dirigida a quien recibe el juego. No se necesita Python ni ninguna librería.</p>
+<h3>4.1 Requisitos</h3>
+<ul>
+<li>Windows 10 u 11 de 64 bits.</li>
+<li>Tarjeta gráfica o gráficos integrados con el controlador del fabricante actualizado (OpenGL 2.1 o superior).</li>
+<li>100 MB libres en disco y 2 GB de RAM como mínimo recomendado.</li>
+</ul>
+<h3>4.2 Instalación</h3>
+<ol>
+<li>Descomprimir el archivo <code>JuegoInmunologico_Windows.zip</code> en una carpeta con permiso de escritura (Escritorio, Documentos). No se debe ejecutar desde dentro del <code>.zip</code>.</li>
+<li>No hay instalador: la carpeta resultante contiene <code>JuegoInmunologico.exe</code> y <code>LEEME_USUARIO.txt</code>.</li>
+</ol>
+<h3>4.3 Ejecución</h3>
+<ol>
+<li>Hacer doble clic en <code>JuegoInmunologico.exe</code>. El primer arranque puede tardar unos segundos mientras el programa se descomprime en una carpeta temporal.</li>
+<li>Si Windows muestra <em>"Windows protegió su PC"</em> (SmartScreen), pulsar <strong>Más información</strong> y después <strong>Ejecutar de todas formas</strong>. El ejecutable no está firmado digitalmente.</li>
+<li>Elegir personaje con <code>A</code>/<code>D</code> o las flechas y confirmar con <code>ENTER</code>.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Acción</th>
+<th>Tecla</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mover</td>
+<td><code>A</code> <code>D</code> <code>W</code> <code>S</code> o flechas</td>
+</tr>
+<tr>
+<td>Atacar (mantener = repetir)</td>
+<td><code>ESPACIO</code></td>
+</tr>
+<tr>
+<td>Saltar (gasta energía)</td>
+<td><code>C</code></td>
+</tr>
+<tr>
+<td>Cámara</td>
+<td>Ratón: arrastrar para orbitar, rueda para acercar</td>
+</tr>
+<tr>
+<td>Reiniciar cámara</td>
+<td><code>R</code></td>
+</tr>
+<tr>
+<td>Instrucciones / Acerca de</td>
+<td><code>I</code> / <code>H</code></td>
+</tr>
+<tr>
+<td>Cambiar de nivel</td>
+<td><code>F1</code>, <code>F2</code>, <code>F3</code></td>
+</tr>
+<tr>
+<td>Pantallas de victoria o derrota</td>
+<td><code>ENTER</code> reinicia o vuelve al menú, <code>RETROCESO</code> regresa al menú</td>
+</tr>
+<tr>
+<td>Salir</td>
+<td><code>ESC</code></td>
+</tr>
+</tbody>
+</table>
+<h3>4.4 Controladores gráficos</h3>
+<p>El rendimiento depende del controlador de la GPU:</p>
+<ul>
+<li><strong>Intel, AMD y NVIDIA:</strong> instalar el controlador más reciente desde el sitio del fabricante o desde Windows Update.</li>
+<li><strong>Equipos con dos GPU (portátiles):</strong> en <em>Configuración &gt; Sistema &gt; Pantalla &gt; Gráficos</em> asignar <code>JuegoInmunologico.exe</code> a la GPU de <strong>alto rendimiento</strong>.</li>
+<li><strong>Escritorio remoto o máquinas virtuales sin aceleración:</strong> Windows ofrece solo OpenGL 1.1 por software; el juego puede abrir, pero irá muy lento.</li>
+</ul>
+<div class="salto"></div>
+
+<h2>5. Solución de problemas comunes</h2>
+<p>Primer paso ante cualquier falla: abrir <code>juego_log.txt</code>, que se crea junto al <code>.exe</code>. Contiene los errores y la línea <code>Audio: N de 14 sonidos cargados</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Síntoma</th>
+<th>Causa probable</th>
+<th>Solución</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Error <code>NullFunctionError: Attempt to call an undefined function glutInit</code></td>
+<td>PyOpenGL no encontró la DLL de <strong>freeglut</strong>. Las DLL antiguas <code>glut32.dll</code> y <code>freeglut.dll</code> ya no se usan: este proyecto usa <code>freeglut64.vc14.dll</code>, que viaja dentro del ejecutable.</td>
+<td>Reconstruir con <code>main.spec</code> y comprobar que existe <code>OpenGL\DLLS\freeglut64.vc14.dll</code> en <code>_internal</code> (modalidad carpeta). Si se ejecuta el código fuente, <code>pip install PyOpenGL==3.1.10</code> la instala.</td>
+</tr>
+<tr>
+<td>Aviso de DLL faltante <code>VCRUNTIME140.dll</code>, <code>MSVCP140.dll</code></td>
+<td>Falta el entorno de ejecución de Visual C++.</td>
+<td>Instalar <em>Microsoft Visual C++ Redistributable 2015-2022 (x64)</em>. El ejecutable ya incluye <code>VCRUNTIME140.dll</code> y <code>VCRUNTIME140_1.dll</code>, pero algunos equipos necesitan el paquete completo.</td>
+</tr>
+<tr>
+<td>Error por falta de <code>opengl32.dll</code> o <code>OpenGL.error.GLError</code> al crear la ventana</td>
+<td><code>opengl32.dll</code> es una biblioteca <strong>de Windows</strong>, no se incluye en el ejecutable. Su ausencia o un fallo suele indicar un controlador gráfico ausente o dañado, o una sesión remota sin aceleración.</td>
+<td>Instalar o actualizar el controlador de la GPU; ejecutar en una sesión local.</td>
+</tr>
+<tr>
+<td><code>FileNotFoundError</code> o el registro dice <code>Audio: 0 de 14</code>, o <code>Error cargando sonido</code></td>
+<td>La carpeta <code>UTILS/SOUNDS</code> no se empaquetó o se movió. El juego no se cierra: continúa sin sonido.</td>
+<td>Comprobar que <code>main.spec</code> contiene <code>datas = [(.../UTILS/SOUNDS, UTILS/SOUNDS)]</code> y reconstruir. Verificar que las rutas se obtienen con <code>rutas.ruta_recurso(...)</code> y no con <code>__file__</code>.</td>
+</tr>
+<tr>
+<td>La ventana aparece y se cierra de inmediato</td>
+<td>Excepción al arrancar; sin consola no se ve.</td>
+<td>Leer <code>juego_log.txt</code>. Para depurar, poner <code>console=True</code> en <code>main.spec</code>, recompilar y ejecutar desde <code>cmd</code>.</td>
+</tr>
+<tr>
+<td>Windows SmartScreen o el antivirus bloquean el archivo</td>
+<td>El ejecutable no está firmado y los programas de un solo archivo de PyInstaller generan falsos positivos con frecuencia.</td>
+<td><em>Más información &gt; Ejecutar de todas formas</em>; agregar una excepción; o distribuir la modalidad carpeta.</td>
+</tr>
+<tr>
+<td>Arranque lento (varios segundos)</td>
+<td>En un solo archivo se extrae cada vez a <code>%TEMP%\_MEIxxxxx</code>.</td>
+<td>Es normal; la modalidad carpeta arranca más rápido.</td>
+</tr>
+<tr>
+<td>Pantalla negra, parpadeo o menos de 15 FPS</td>
+<td>Controlador sin aceleración o juego asignado a la GPU integrada.</td>
+<td>Actualizar el controlador y asignar la GPU de alto rendimiento (sección 4.4).</td>
+</tr>
+<tr>
+<td><code>python</code> abre la Microsoft Store al ejecutar <code>construir_exe.bat</code></td>
+<td>Alias de Windows sin Python instalado.</td>
+<td><code>set PYTHON=C:\ruta\a\python.exe</code> y repetir.</td>
+</tr>
+<tr>
+<td><code>ERROR: Could not find a version that satisfies the requirement pyinstaller</code></td>
+<td>Versión de Python no soportada por PyInstaller.</td>
+<td>Usar una versión reciente de PyInstaller (6.22.3 en este trabajo).</td>
+</tr>
+<tr>
+<td>En el registro: <code>Unable to import OpenGL.arrays.numpymodule.NumpyHandler</code></td>
+<td>Numpy se excluyó a propósito.</td>
+<td>Ninguna: es solo informativo.</td>
+</tr>
+</tbody>
+</table>
+<h3>5.1 Compatibilidad con Linux</h3>
+<p>PyInstaller <strong>no compila de forma cruzada</strong>: el ejecutable de Windows no corre en Linux, y para obtener uno de Linux hay que compilar en un Linux. En esa plataforma hay que instalar las bibliotecas del sistema (<code>sudo apt install freeglut3 libglu1-mesa</code>), y los permisos de ejecución (<code>chmod +x</code>) y las sesiones sin servidor X pueden dar errores como <code>freeglut: failed to open display</code>. El código fuente no usa llamadas exclusivas de Windows, y el <code>.spec</code> tolera la ausencia de las DLL, pero <strong>no se probó la compilación en Linux</strong> en este trabajo.</p>
+<div class="salto"></div>
+
+<h2>6. Conclusiones y anexos</h2>
+<h3>6.1 Conclusiones</h3>
+<p>Empaquetar un videojuego procedural en PyOpenGL con PyInstaller resultó viable y rápido (una compilación de unos 30 segundos), pero reveló que el código debe prepararse para su distribución. La principal dificultad fue de diseño y no de la herramienta: un programa que lee recursos con rutas basadas en <code>__file__</code> deja de funcionar al empaquetarse, y la solución fue concentrar el cálculo de rutas en un único módulo (<code>rutas.py</code>) que distingue entre ejecución normal y ejecutable mediante <code>sys.frozen</code> y <code>sys._MEIPASS</code>. Esta es una ventaja de la arquitectura procedimental del proyecto: un cambio centralizado en una función bastó para toda la aplicación.</p>
+<p>La segunda lección es que las dependencias cargadas dinámicamente, como la DLL de freeglut que PyOpenGL abre con <code>ctypes</code>, no son visibles para el análisis estático de importaciones, y deben declararse explícitamente en el <code>.spec</code>. Lo mismo ocurre con los paquetes de espacio de nombres sin <code>__init__.py</code>, que se resolvieron con <code>hiddenimports</code>.</p>
+<p>La tercera lección es la importancia de <strong>verificar el ejecutable ejecutándolo</strong>, no solo comprobando que la compilación termine: la prueba real con partidas simuladas, el archivo de registro y la comparación con la ejecución en modo desarrollo permitieron descubrir un fallo que la compilación no reportaba. Un archivo de registro es indispensable en una aplicación sin consola.</p>
+<p>Finalmente, la modalidad de un solo archivo es cómoda para entregar (29.2 MB), pero la de carpeta arranca más rápido y genera menos alertas de antivirus; la decisión depende de si se prioriza la comodidad de entrega o la experiencia de arranque. Como trabajo futuro quedan la firma digital del ejecutable, la compilación y prueba en Linux, y automatizar la verificación del ejecutable.</p>
+<div class="salto"></div>
+
+<h3>Anexo A. Estructura de carpetas resultante en <code>dist/</code></h3>
+<p><strong>Modalidad un solo archivo:</strong></p>
+<pre><code>dist/
+└── JuegoInmunologico.exe          (29.2 MB, ejecutable autónomo)
+</code></pre>
+<p><strong>Modalidad carpeta (<code>construir_exe.bat carpeta</code>):</strong></p>
+<pre><code>dist/JuegoInmunologico/             (50.6 MB en total)
+├── JuegoInmunologico.exe           (2.9 MB, lanzador)
+└── _internal/
+    ├── base_library.zip            (biblioteca estándar de Python)
+    ├── python314.dll               (intérprete de Python)
+    ├── VCRUNTIME140.dll, VCRUNTIME140_1.dll, MSVCR100.dll
+    ├── SDL2.dll, SDL2_mixer.dll, SDL2_image.dll, SDL2_ttf.dll   (audio y soporte de pygame)
+    ├── libogg, libopus, libpng, libjpeg, libwebp, freetype ...  (códecs usados por SDL)
+    ├── _ctypes.pyd, _decimal.pyd, _ssl.pyd, ...                 (módulos nativos de Python)
+    ├── OpenGL/
+    │   └── DLLS/
+    │       ├── freeglut64.vc14.dll   (GLUT que usa PyOpenGL en Python 3.14 x64)
+    │       ├── freeglut32.*, freeglut64.*, gle32.*, gle64.*      (variantes incluidas por el hook)
+    │       └── freeglut_COPYING.txt, ...
+    ├── pygame/
+    │   └── SDL2.dll, ...
+    └── UTILS/
+        └── SOUNDS/                 (23 archivos .wav y .mp3; el juego usa 14)
+</code></pre>
+<p>Archivos del proyecto relacionados con la compilación (en la raíz del repositorio):</p>
+<pre><code>main.spec                  configuración de PyInstaller
+construir_exe.bat          script de compilación
+requirements.txt           dependencias de ejecución
+requirements-build.txt     dependencias de ejecución + PyInstaller
+RESOURCES/rutas.py         rutas dinámicas de recursos (sys._MEIPASS)
+docs/LEEME_USUARIO.txt     instrucciones para el usuario final
+</code></pre>
+<h3>Anexo B. Resumen de comandos de compilación</h3>
+<table>
+<thead>
+<tr>
+<th>Objetivo</th>
+<th>Comando</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compilar un solo archivo</td>
+<td><code>construir_exe.bat</code></td>
+</tr>
+<tr>
+<td>Compilar carpeta</td>
+<td><code>construir_exe.bat carpeta</code></td>
+</tr>
+<tr>
+<td>Indicar el intérprete de Python</td>
+<td><code>set PYTHON=C:\ruta\a\python.exe</code></td>
+</tr>
+<tr>
+<td>Crear el entorno virtual a mano</td>
+<td><code>python -m venv .venv</code></td>
+</tr>
+<tr>
+<td>Instalar dependencias de compilación</td>
+<td><code>.venv\Scripts\python.exe -m pip install -r requirements-build.txt</code></td>
+</tr>
+<tr>
+<td>Compilar a mano (un solo archivo)</td>
+<td><code>.venv\Scripts\python.exe -m PyInstaller main.spec --noconfirm --clean</code></td>
+</tr>
+<tr>
+<td>Compilar a mano (carpeta)</td>
+<td><code>set ONEFILE=0</code> y luego el comando anterior</td>
+</tr>
+<tr>
+<td>Ejecutar desde el código fuente</td>
+<td><code>python main.py</code> (desde la raíz del proyecto)</td>
+</tr>
+<tr>
+<td>Comprobar la integridad del <code>.exe</code></td>
+<td><code>Get-FileHash dist\JuegoInmunologico.exe</code> (PowerShell)</td>
+</tr>
+<tr>
+<td>Comprimir para entregar</td>
+<td><code>Compress-Archive -Path dist\JuegoInmunologico.exe, docs\LEEME_USUARIO.txt -DestinationPath JuegoInmunologico_Windows.zip</code></td>
+</tr>
+</tbody>
+</table></body></html>

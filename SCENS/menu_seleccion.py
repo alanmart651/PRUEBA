@@ -21,8 +21,8 @@ ALTO_PEDESTAL = 0.8
 
 # Célula que representa cada personaje, su habilidad y su limitación
 ROLES = {
-    "isaac": "Macrófago (inmunidad innata) - fagocitosis en área - resistente y pesado",
-    "azazel": "Linfocito T citotóxico (adaptativa) - lisis citolítica - debe acercarse al objetivo",
+    "isaac": "Macrófago (inmunidad innata) - disparo de lágrimas - resistente, pasos pesados",
+    "azazel": "Linfocito T citotóxico (adaptativa) - rayo de sangre - daño alto, alcance medio",
     "chispa": "Célula dendrítica (innata) - destello que aturde - el más rápido, daño bajo",
     "mapi": "Linfocito B de memoria (adaptativa) - anticuerpos teledirigidos - débil de cerca",
     "brote": "Fibroblasto cardiaco (soporte) - polen que atrae eritrocitos - daño muy bajo",
@@ -139,7 +139,7 @@ def _dibujar_personaje(nombre, seleccionado, t):
 
 #ancho en píxeles de un texto con la fuente del HUD
 def _ancho_texto(texto):
-    return sum(glutBitmapWidth(FUENTE, ord(c)) for c in texto)
+    return hud.ancho_texto(texto)
 
 
 #HUD 2D del menú

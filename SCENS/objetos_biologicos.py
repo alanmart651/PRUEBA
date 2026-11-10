@@ -113,14 +113,27 @@ def iniciar_nivel(escenario):
         for tipo, x, z in (("eritrocito", -7, 6), ("eritrocito", 9, 5), ("atp", -7, -2),
                            ("atp", 7, -2), ("anticuerpo", 0, -8), ("vesicula", 6, 3), ("vesicula", -8, -6)):
             _nueva(tipo, x, z)
-    else:
-        for tipo, x, z in (("virus_a", -12, -6), ("virus_a", 12, -8), ("virus_a", -4, -10),
-                           ("virus_b", -9, -12), ("virus_b", 10, -2), ("bacilo", -12, 0),
-                           ("bacilo", 12, 3), ("coco", 0, -6), ("jefe", 0, -12.5)):
+    elif escenario == 1:
+        # Vaso sanguíneo: dominan los virus
+        for tipo, x, z in (("virus_a", -12, -6), ("virus_a", 12, -8), ("virus_a", -4, -10), ("virus_a", 6, -12),
+                           ("virus_b", -9, -12), ("virus_b", 10, -2), ("virus_b", 0, -8),
+                           ("bacilo", -12, 1), ("coco", 4, -5)):
             _nueva(tipo, x, z)
         for tipo, x, z in (("eritrocito", -8, 4), ("eritrocito", 8, 6), ("eritrocito", 0, 2),
-                           ("atp", -6, -3), ("atp", 6, -4), ("atp", 0, 8), ("anticuerpo", 0, -3),
-                           ("vesicula", -5, -3), ("vesicula", 5, -6)):
+                           ("atp", -7, -2), ("atp", 7, -3), ("atp", 0, 8), ("anticuerpo", 0, -4),
+                           ("vesicula", -4, -6), ("vesicula", 4, -7)):
+            _nueva(tipo, x, z)
+    else:
+        # Ganglio linfático: más patógenos y el jefe
+        for tipo, x, z in (("virus_a", -12, -4), ("virus_a", 12, -5), ("virus_a", -6, -12), ("virus_a", 7, -11),
+                           ("virus_b", -10, -10), ("virus_b", 10, -9), ("virus_b", 0, -6),
+                           ("bacilo", -12, 2), ("bacilo", 12, 4), ("bacilo", -8, -13),
+                           ("coco", -5, -2), ("coco", 6, -3), ("jefe", 0, -12.5)):
+            _nueva(tipo, x, z)
+        for tipo, x, z in (("eritrocito", -8, 6), ("eritrocito", 8, 7), ("eritrocito", 0, 4),
+                           ("atp", -9, 0), ("atp", 9, 0), ("atp", -3, 7), ("atp", 3, -3),
+                           ("anticuerpo", -6, 5), ("anticuerpo", 6, -8),
+                           ("vesicula", -7, -8), ("vesicula", 7, -6), ("vesicula", 0, -1)):
             _nueva(tipo, x, z)
     total_inicial = sum(1 for e in entidades if e["tipo"] in PATOGENOS)
 
