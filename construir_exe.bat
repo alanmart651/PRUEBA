@@ -1,7 +1,7 @@
 @echo off
 rem Genera el ejecutable del juego con PyInstaller dentro de un entorno virtual limpio (.venv).
-rem Uso:   construir_exe.bat          -> dist\JuegoInmunologico.exe (un solo archivo)
-rem        construir_exe.bat carpeta  -> dist\JuegoInmunologico\    (carpeta, arranque mas rapido)
+rem Uso:   construir_exe.bat          = dist\Isaac y el corazon de mamá.exe (un solo archivo)
+rem        construir_exe.bat carpeta  = dist\Isaac y el corazon de mamá\    (carpeta, arranque mas rapido)
 rem Si "python" abre la Microsoft Store, indica el interprete real:
 rem        set PYTHON=C:\ruta\a\python.exe
 setlocal

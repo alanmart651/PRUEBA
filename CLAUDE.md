@@ -19,7 +19,7 @@ python main.py   # run from the repo root so package imports resolve
 
 ## Building the .exe
 
-`construir_exe.bat` builds a Windows executable with PyInstaller inside `.venv` (set `PYTHON=<full path>` first if `python` opens the Store stub). It runs `main.spec`: one file by default (`dist/JuegoInmunologico.exe`), or `construir_exe.bat carpeta` for a folder. `docs/` has the user `LEEME_USUARIO.txt` and the report (`REPORTE_DESPLIEGUE.md/.html/.pdf`).
+`construir_exe.bat` builds a Windows executable with PyInstaller inside `.venv` (set `PYTHON=<full path>` first if `python` opens the Store stub). It runs `main.spec`: one file by default (`dist/Isaac y el corazon de mamá.exe`), or `construir_exe.bat carpeta` for a folder. `docs/` has the user `LEEME_USUARIO.txt` and the report (`REPORTE_DESPLIEGUE.md/.html/.pdf`).
 
 - Resources must be located with `RESOURCES/rutas.py` (`ruta_recurso(...)`, which uses `sys._MEIPASS` when frozen), never with `__file__`. `UTILS/SOUNDS` is bundled by `main.spec`.
 - The package folders have no `__init__.py`, so `main.spec` lists every module of `ACTIONS`, `CHARACTERS`, `RESOURCES` and `SCENS` as `hiddenimports` (except the four unused ones). A new `.py` is picked up automatically, but a new top-level folder must be added to the loop in the spec. The spec also bundles the freeglut DLLs and excludes numpy (PyOpenGL works without it; the game was verified both ways).
