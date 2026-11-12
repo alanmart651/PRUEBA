@@ -31,12 +31,11 @@ from SCENS import menu_seleccion as menu
 width = 1240
 height = 680
 
-# Fondo y niebla de los escenarios orgánicos: (color, densidad)
+# Fondo y niebla de los escenarios orgánicos
 AMBIENTES = {0: ((0.10, 0.01, 0.02), 0.013), 1: ((0.01, 0.04, 0.10), 0.013), 2: ((0.05, 0.08, 0.02), 0.016)}
 
 ultimo_t = time.time()
 
-# El modelo del jugador se reduce un poco en partida para no tapar el escenario
 ESCALA_JUGADOR = 0.8
 
 
@@ -130,7 +129,7 @@ def display():
     salto = juego.altura_salto(t)
     luz.aplicar_luces(t, h.estado_escenario, (j["x"], j["z"]))
 
-    # Material base húmedo y brillante para cualquier escenario (los niveles lo ajustan)
+    # Material base húmedo y brillante para cualquier escenario
     v.material(60.0, 0.5)
 
     # Escenarios
