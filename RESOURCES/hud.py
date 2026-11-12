@@ -15,6 +15,15 @@ NOMBRES_ESCENARIO = {6: "Ángel", 7: "Diablo", 8: "Dark room", 9: "Home", 0: "Mi
 FUENTE = GLUT_BITMAP_HELVETICA_18  # type: ignore
 FUENTE_GRANDE = GLUT_BITMAP_TIMES_ROMAN_24  # type: ignore
 
+
+TEXTO_FINAL = [
+    "CREDITOS: Roberto Tapia Ramírez y Alan Yahir Martinez Flores",
+    "Versión 1.0 - noviembre 2026",
+    "PROFESoRA : Rocio Elizabeth Pulido Alba",
+    "PROYECTO DE GRAFICACION",
+    "PURO T-LC1 MARTES Y JUEVES DE 9-11!!!!"
+]
+
 # Valores que siguen a la barra real para mostrar el "rastro" del daño
 _visible = {"salud": 1.0, "energia": 1.0}
 
@@ -230,9 +239,12 @@ def _pantalla_final(width, height):
     texto_centrado(height * 0.30 + 112, "¿SABÍAS QUE...?", (1.0, 0.85, 0.3), width, FUENTE, k)
     for i, linea in enumerate(textwrap.wrap(juego.dato, 78)):
         texto_centrado(height * 0.30 + 140 + i * 26, linea, (1.0, 1.0, 1.0), width, FUENTE, k)
+    for i, linea in enumerate(TEXTO_FINAL[:3]):
+        if linea.strip():
+            texto_centrado(height * 0.30 + 204 + i * 26, linea, (1.0, 0.9, 0.5), width, FUENTE, k)
     pulso = 0.6 + 0.4 * math.sin(juego.t_fase * 4.0)
     pie = "[ENTER] Reiniciar   [RETROCESO] Menú   [ESC] Salir" if not victoria else "[ENTER] Volver al menú   [ESC] Salir"
-    texto_centrado(height * 0.30 + 230, pie, (1.0, 1.0, 1.0), width, FUENTE, k * pulso)
+    texto_centrado(height * 0.30 + 300, pie, (1.0, 1.0, 1.0), width, FUENTE, k * pulso)
 
 
 #fundido y título al entrar a un nivel
@@ -266,7 +278,7 @@ def draw_hud(width, height):
     if h.mostrar_acerca_de:
         draw_text_2D(20, 190, "ACERCA DE", 1, 1, 1)
         draw_text_2D(20, 220, "Isaac, Azazel, Chispa, Mapi, Brote y Perno", 1, 1, 1)
-        draw_text_2D(20, 245, "Creado por: Roberto Tapia Ramírez (cannibalfps)", 1, 1, 1)
+        draw_text_2D(20, 245, "Creado por: Roberto Tapia Ramírez y Alan Yahir Martinez", 1, 1, 1)
 
     if h.mostrar_instrucciones:
         _rect(10, 160, width - 20, 280, 0.0, 0.0, 0.0, 0.6)
