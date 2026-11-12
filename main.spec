@@ -2,14 +2,14 @@
 # Configuración de PyInstaller para el juego 3D (PyOpenGL + GLUT + pygame-ce).
 #
 # Compilar:      python -m PyInstaller main.spec --noconfirm --clean
-# Un solo .exe:  (por defecto)            -> dist/JuegoInmunologico.exe
-# Carpeta:       set ONEFILE=0 antes de compilar -> dist/JuegoInmunologico/
+# Un solo .exe:  (por defecto)            -> dist/Isaac y el corazon de mamá.exe
+# Carpeta:       set ONEFILE=0 antes de compilar -> dist/Isaac y el corazon de mamá/
 import os
 import glob
 import OpenGL
 
 RAIZ = os.path.abspath(SPECPATH)
-NOMBRE = "JuegoInmunologico"
+NOMBRE = "Isaac y el corazon de mamá"
 ONEFILE = os.environ.get("ONEFILE", "1") != "0"
 
 # 1) Módulos propios. Las carpetas no tienen __init__.py (paquetes de espacio de nombres),

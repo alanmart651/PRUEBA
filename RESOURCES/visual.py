@@ -71,8 +71,6 @@ def cono(pos, radio, alto, color, det=12):
 
 
 # ---------- transparencias ----------
-# El estado se guarda y se restaura porque el resto de la aplicación depende de
-# GL_BLEND activo (sombras) y de que la luz siga como la dejó el usuario.
 def iniciar_aditivo():
     glPushAttrib(GL_ENABLE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)  # type: ignore
     glDisable(GL_LIGHTING)

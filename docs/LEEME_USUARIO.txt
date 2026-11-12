@@ -12,7 +12,7 @@ REQUISITOS
 INSTALACIÓN
   1. Descomprime el archivo .zip en cualquier carpeta con permiso de escritura
      (por ejemplo, el Escritorio o Documentos). No lo ejecutes desde dentro del .zip.
-  2. Haz doble clic en  JuegoInmunologico.exe
+  2. Haz doble clic en  Isaac y el corazon de mamá.exe
   3. Si Windows muestra "Windows protegió su PC" (SmartScreen), pulsa
      "Más información" y luego "Ejecutar de todas formas". El programa no está firmado
      digitalmente porque es un proyecto escolar.

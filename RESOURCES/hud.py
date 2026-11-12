@@ -239,12 +239,12 @@ def _pantalla_final(width, height):
     texto_centrado(height * 0.30 + 112, "¿SABÍAS QUE...?", (1.0, 0.85, 0.3), width, FUENTE, k)
     for i, linea in enumerate(textwrap.wrap(juego.dato, 78)):
         texto_centrado(height * 0.30 + 140 + i * 26, linea, (1.0, 1.0, 1.0), width, FUENTE, k)
-    for i, linea in enumerate(TEXTO_FINAL[:3]):
+    for i, linea in enumerate(TEXTO_FINAL[:4]):
         if linea.strip():
             texto_centrado(height * 0.30 + 204 + i * 26, linea, (1.0, 0.9, 0.5), width, FUENTE, k)
     pulso = 0.6 + 0.4 * math.sin(juego.t_fase * 4.0)
     pie = "[ENTER] Reiniciar   [RETROCESO] Menú   [ESC] Salir" if not victoria else "[ENTER] Volver al menú   [ESC] Salir"
-    texto_centrado(height * 0.30 + 300, pie, (1.0, 1.0, 1.0), width, FUENTE, k * pulso)
+    texto_centrado(height * 0.30 + 325, pie, (1.0, 1.0, 1.0), width, FUENTE, k * pulso)
 
 
 #fundido y título al entrar a un nivel
