@@ -213,7 +213,7 @@ def main():
     init_audio()
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)  # type: ignore
     glutInitWindowSize(width, height)
-    glutCreateWindow(b"Isaac")
+    glutCreateWindow("Isaac y el corazon de mamá".encode("cp1252"))
     init()
     h.crear_menu()
 
