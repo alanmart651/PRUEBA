@@ -6,6 +6,7 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from ACTIONS import combate
 from ACTIONS import juego
+from ACTIONS import npcs
 from RESOURCES import HandLes as h
 from RESOURCES import iluminacion as luz
 from SCENS import objetos_biologicos as bio
@@ -25,7 +26,7 @@ TEXTO_FINAL = [
 ]
 
 # Valores que siguen a la barra real para mostrar el "rastro" del daño
-_visible = {"salud": 1.0, "energia": 1.0}
+_visible = {}   # por jugador
 
 # Anchos de texto ya calculados (los mismos textos se miden en cada cuadro)
 _anchos = {}
@@ -145,43 +146,88 @@ def draw_panel_estado(height):
                  f"Reacciones: {onoff(h.reacciones_activas)}", 1, 1, 1)
 
 
-#barras, contadores y avisos de la partida
-def _hud_partida(width, height):
-    j = juego.jugador
-    st = juego.stats()
-    nivel = juego.en_nivel()
+#teclas de cada jugador que se muestran en su panel
+def _texto_controles(j):
+    if not h.dos_jugadores:
+        return "ESPACIO o ENTER: ataque   |   E: hablar"
+    if j["id"] == 0:
+        return "ESPACIO: ataque   |   E: hablar"
+    return "ENTER: ataque   |   SHIFT der.: hablar"
 
-    _visible["salud"] += (j["salud"] / juego.SALUD_MAX - _visible["salud"]) * 0.06
-    _visible["energia"] += (j["energia"] / juego.ENERGIA_MAX - _visible["energia"]) * 0.10
 
-    texto_sombra(20, 28, f"{h.personaje_actual.upper()} - {st['celula']}", (1.0, 0.85, 0.3), FUENTE)
-    _barra(20, 40, 280, 24, j["salud"] / juego.SALUD_MAX, _visible["salud"], (1.0, 0.35, 0.35), (0.7, 0.05, 0.1),
+#barras, enfriamiento y estado de un jugador; devuelve la altura donde termina
+#con derecha=True el panel se alinea al borde derecho (x es ese borde)
+def _panel_jugador(j, x, derecha=False):
+    st = juego.stats(j)
+    dos = h.dos_jugadores
+    vis = _visible.setdefault(j["id"], {"salud": 1.0, "energia": 1.0})
+    vis["salud"] += (j["salud"] / juego.SALUD_MAX - vis["salud"]) * 0.06
+    vis["energia"] += (j["energia"] / juego.ENERGIA_MAX - vis["energia"]) * 0.10
+
+    color = juego.COLORES_JUGADOR[j["id"]] if dos else (1.0, 0.85, 0.3)
+    titulo = f"{juego.personaje_de(j).upper()} - {st['celula']}"
+    if dos:
+        titulo = f"J{j['id'] + 1}  {titulo}   ({j['puntos']} elim.)"
+    controles = _texto_controles(j)
+    if derecha:
+        borde = x
+        x = borde - 280
+        x_titulo, x_controles = borde - ancho_texto(titulo), borde - ancho_texto(controles)
+    else:
+        x_titulo = x_controles = x
+    texto_sombra(x_titulo, 28, titulo, color, FUENTE)
+    _barra(x, 40, 280, 24, j["salud"] / juego.SALUD_MAX, vis["salud"], (1.0, 0.35, 0.35), (0.7, 0.05, 0.1),
            f"SALUD {int(j['salud'])}/{int(juego.SALUD_MAX)}")
-    _barra(20, 76, 280, 24, j["energia"] / juego.ENERGIA_MAX, _visible["energia"], (0.4, 1.0, 1.0), (0.1, 0.55, 0.8),
+    _barra(x, 76, 280, 24, j["energia"] / juego.ENERGIA_MAX, vis["energia"], (0.4, 1.0, 1.0), (0.1, 0.55, 0.8),
            f"ENERGÍA {int(j['energia'])}/{int(juego.ENERGIA_MAX)}")
 
     # Enfriamiento del ataque
     listo = 1.0 - j["cd"] / st["cooldown"] if st["cooldown"] > 0 else 1.0
-    _rect(20, 108, 280, 6, 0.0, 0.0, 0.0, 0.5)
-    _rect(20, 108, 280 * max(0.0, min(1.0, listo)), 6, 1.0, 0.85, 0.3, 0.9)
-    texto_sombra(310, 116, "ESPACIO: ataque", (0.9, 0.9, 0.9))
+    _rect(x, 108, 280, 6, 0.0, 0.0, 0.0, 0.5)
+    _rect(x, 108, 280 * max(0.0, min(1.0, listo)), 6, 1.0, 0.85, 0.3, 0.9)
+    texto_sombra(x_controles, 134, controles, (0.9, 0.9, 0.9))
+
+    if j["caido"]:
+        _rect(x - 4, 36, 288, 82, 0.05, 0.0, 0.0, 0.92)
+        progreso = int(100 * j["reanimar"] / juego.TIEMPO_REANIMAR)
+        texto_sombra(x + 10, 70, "CAÍDO", (1.0, 0.4, 0.4), FUENTE_GRANDE)
+        texto_sombra(x + 10, 98, f"Tu compañero te reanima: {progreso} %", (1.0, 1.0, 1.0))
+    return 160
+
+
+#barras, contadores y avisos de la partida
+def _hud_partida(width, height):
+    nivel = juego.en_nivel()
+    jugadores = juego.activos()
+
+    y = _panel_jugador(jugadores[0], 20)
+    y_derecha = _panel_jugador(jugadores[1], width - 20, derecha=True) if len(jugadores) > 1 else 0
 
     if nivel:
         quedan = sum(1 for e in bio.entidades if e["tipo"] in bio.PATOGENOS)
-        texto_sombra(20, 146, f"Patógenos: {quedan}   ATP: {juego.contadores['atp']}   "
-                              f"Eritrocitos: {juego.contadores['eritrocitos']}   Eliminados: {juego.contadores['eliminados']}",
+        texto_sombra(20, y, f"Patógenos: {quedan}   ATP: {juego.contadores['atp']}   "
+                            f"Eritrocitos: {juego.contadores['eritrocitos']}   Eliminados: {juego.contadores['eliminados']}",
                      (1.0, 1.0, 1.0))
-        y = 172
-        if j["marcado_t"] > 0.0:
-            texto_sombra(20, y, f"Anticuerpos activos: {j['marcado_t']:.0f} s", (1.0, 0.5, 0.95))
+        y += 26
+        if max(j["marcado_t"] for j in jugadores) > 0.0:
+            texto_sombra(20, y, f"Anticuerpos activos: {max(j['marcado_t'] for j in jugadores):.0f} s", (1.0, 0.5, 0.95))
             y += 24
-        if st["escudo"]:
-            texto_sombra(20, y, "Escudo frontal activo | no recupera salud", (0.4, 1.0, 1.0))
+        for j in jugadores:
+            if juego.stats(j)["escudo"]:
+                escudo = "Escudo frontal activo | no recupera salud"
+                columna_x, columna_y = (20, y) if j["id"] == 0 else (width - 20 - ancho_texto(escudo), y_derecha)
+                texto_sombra(columna_x, columna_y, escudo, (0.4, 1.0, 1.0))
+                if j["id"] == 0:
+                    y += 24
+        for linea in npcs.misiones_en_curso():
+            texto_sombra(20, y, linea, (1.0, 0.85, 0.3))
+            y += 24
 
     # Barra del jefe
     jefe = bio.jefe_vivo() if nivel else None
     if jefe is not None:
-        w = min(460, width - 80)
+        w = min(460, width - 680) if len(jugadores) > 1 else min(460, width - 80)
+        w = max(w, 200)
         x = (width - w) / 2
         texto_centrado(24, "BIOPELÍCULA BACTERIANA", (1.0, 0.7, 0.3), width)
         _barra(x, 34, w, 16, jefe["hp"] / jefe["hp_max"], jefe["hp"] / jefe["hp_max"], (1.0, 0.6, 0.2), (0.7, 0.25, 0.05), "")
@@ -191,12 +237,17 @@ def _hud_partida(width, height):
         return
     if juego.mensaje[1] > 0.0:
         texto_centrado(height * 0.3, juego.mensaje[0], (1.0, 1.0, 0.7), width, FUENTE_GRANDE, min(1.0, juego.mensaje[1] * 2.0))
-    if j["aviso_t"] > 0.0:
-        texto_centrado(height * 0.36, j["aviso"], (1.0, 0.65, 0.3), width, FUENTE, min(1.0, j["aviso_t"] * 2.0))
+    for i, j in enumerate(jugadores):
+        if j["aviso_t"] > 0.0:
+            aviso = (f"J{j['id'] + 1}: " if len(jugadores) > 1 else "") + j["aviso"]
+            texto_centrado(height * 0.36 + i * 26, aviso, (1.0, 0.65, 0.3), width, FUENTE, min(1.0, j["aviso_t"] * 2.0))
 
-    # Ficha informativa del patógeno o la molécula más cercana
-    if nivel and not h.mostrar_instrucciones and juego.fase == "JUGANDO":
-        e = bio.ficha_cercana(j["x"], j["z"])
+    if nivel:
+        _etiquetas_npc()
+
+    # Ficha informativa del patógeno o la molécula más cercana al J1
+    if nivel and not h.mostrar_instrucciones and not npcs.abierto():
+        e = bio.ficha_cercana(jugadores[0]["x"], jugadores[0]["z"])
         if e is not None:
             d = bio.DATOS[e["tipo"]]
             w, y = min(620, width - 40), height - 118
@@ -206,14 +257,83 @@ def _hud_partida(width, height):
             texto_sombra(x + 14, y + 56, d["info"], (1.0, 1.0, 1.0))
 
 
+#nombre sobre cada NPC y, si un jugador está cerca, la tecla para hablar
+def _etiquetas_npc():
+    for n, sx, sy in npcs.etiquetas:
+        datos = n["datos"]
+        nombre = f"{datos['nombre']} - {datos['celula']}"
+        texto_sombra(sx - ancho_texto(nombre) / 2, sy, nombre, (1.0, 0.95, 0.75))
+        if npcs.abierto():
+            continue
+        fila = 1
+        for j in juego.en_pie():
+            if npcs.cercano(j) is not n:
+                continue
+            tecla = "SHIFT der." if j["id"] == 1 else "E"
+            aviso = f"[{tecla}] Hablar" + (f" (J{j['id'] + 1})" if h.dos_jugadores else "")
+            color = juego.COLORES_JUGADOR[j["id"]] if h.dos_jugadores else (0.5, 1.0, 0.6)
+            texto_sombra(sx - ancho_texto(aviso) / 2, sy + fila * 24, aviso, color)
+            fila += 1
+
+
+#ventana de diálogo con el NPC
+def _dialogo(width, height):
+    if not npcs.abierto():
+        return
+    d = npcs.dialogo
+    datos = d["npc"]["datos"]
+    lineas = textwrap.wrap(npcs.texto_actual(), 84)
+    opciones = npcs.opciones()
+    w = min(820, width - 40)
+    alto = 96 + len(lineas) * 24 + len(opciones) * 28 + 30
+    x, y = (width - w) / 2, height - alto - 20
+    duenio = d["jugador"]["id"]
+    color = juego.COLORES_JUGADOR[duenio] if h.dos_jugadores else (1.0, 0.85, 0.3)
+
+    _rect(x, y, w, alto, 0.02, 0.03, 0.07, 0.88)
+    glColor4f(color[0], color[1], color[2], 0.9)
+    glLineWidth(2.0)
+    glBegin(GL_LINE_LOOP)
+    glVertex2f(x, y)
+    glVertex2f(x + w, y)
+    glVertex2f(x + w, y + alto)
+    glVertex2f(x, y + alto)
+    glEnd()
+    glLineWidth(1.0)
+
+    texto_sombra(x + 18, y + 32, f"{datos['nombre']} - {datos['celula']}", color, FUENTE_GRANDE)
+    if h.dos_jugadores:
+        habla = f"Habla J{duenio + 1}"
+        texto_sombra(x + w - 18 - ancho_texto(habla), y + 30, habla, color)
+    for i, linea in enumerate(lineas):
+        texto_sombra(x + 18, y + 64 + i * 24, linea, (1.0, 1.0, 1.0))
+
+    y_op = y + 64 + len(lineas) * 24 + 14
+    for i, (_, o) in enumerate(opciones):
+        elegida = i == min(d["sel"], len(opciones) - 1)
+        if elegida:
+            _rect(x + 12, y_op + i * 28 - 19, w - 24, 26, color[0], color[1], color[2], 0.22)
+        texto_sombra(x + 22, y_op + i * 28, f"{'>' if elegida else ' '} {i + 1}. {o['texto']}",
+                     (1.0, 0.9, 0.4) if elegida else (0.85, 0.85, 0.85))
+
+    if not h.dos_jugadores:
+        pie = "W/S o FLECHAS: elegir   |   E, ESPACIO o ENTER: aceptar   |   1-9: opción   |   RETROCESO: cerrar"
+    elif duenio == 0:
+        pie = "W/S: elegir   |   E o ESPACIO: aceptar   |   1-9: opción   |   RETROCESO: cerrar"
+    else:
+        pie = "FLECHAS: elegir   |   ENTER o SHIFT der.: aceptar   |   RETROCESO: cerrar"
+    texto_sombra(x + 18, y + alto - 12, pie, (0.65, 0.75, 0.85))
+
+
 #viñetas y destello de pantalla
 def _efectos_pantalla(width, height):
-    j = juego.jugador
     t = glutGet(GLUT_ELAPSED_TIME) / 1000.0
-    if juego.fase == "JUGANDO" and juego.en_nivel():
-        _vineta(width, height, (0.9, 0.05, 0.05), j["dano_t"] / 0.5 * 0.6)
-        if j["salud"] < 30.0:
-            _vineta(width, height, (0.7, 0.0, 0.0), (0.18 + 0.12 * math.sin(t * 6.0)) * (1.0 - j["salud"] / 30.0) * 2.0)
+    grupo = juego.en_pie()
+    if juego.fase == "JUGANDO" and juego.en_nivel() and grupo:
+        _vineta(width, height, (0.9, 0.05, 0.05), max(j["dano_t"] for j in grupo) / 0.5 * 0.6)
+        salud = min(j["salud"] for j in grupo)
+        if salud < 30.0:
+            _vineta(width, height, (0.7, 0.0, 0.0), (0.18 + 0.12 * math.sin(t * 6.0)) * (1.0 - salud / 30.0) * 2.0)
         if h.estado_escenario in (0, 1):
             _vineta(width, height, (0.5, 0.0, 0.05), 0.10 * luz.pulso_latido(t), 120)
     if combate.destello > 0.0:
@@ -236,6 +356,10 @@ def _pantalla_final(width, height):
     texto_centrado(height * 0.30 + 66, f"Patógenos eliminados: {juego.contadores['eliminados']}   ATP: "
                                        f"{juego.contadores['atp']}   Eritrocitos: {juego.contadores['eritrocitos']}",
                    (1.0, 0.9, 0.6), width, FUENTE, k)
+    if h.dos_jugadores:
+        a, b = juego.activos()
+        texto_centrado(height * 0.30 + 90, f"J1: {a['puntos']} eliminados   |   J2: {b['puntos']} eliminados",
+                       (0.8, 0.95, 1.0), width, FUENTE, k)
     texto_centrado(height * 0.30 + 112, "¿SABÍAS QUE...?", (1.0, 0.85, 0.3), width, FUENTE, k)
     for i, linea in enumerate(textwrap.wrap(juego.dato, 78)):
         texto_centrado(height * 0.30 + 140 + i * 26, linea, (1.0, 1.0, 1.0), width, FUENTE, k)
@@ -280,19 +404,22 @@ def draw_hud(width, height):
         draw_text_2D(20, 220, "Isaac, Azazel, Chispa, Mapi, Brote y Perno", 1, 1, 1)
         draw_text_2D(20, 245, "Creado por: Roberto Tapia Ramírez y Alan Yahir Martinez", 1, 1, 1)
 
-    if h.mostrar_hud and h.mostrar_instrucciones:
-        _rect(10, 160, width - 20, 280, 0.0, 0.0, 0.0, 0.6)
+    if h.mostrar_instrucciones:
+        _rect(10, 160, width - 20, 330, 0.0, 0.0, 0.0, 0.6)
         draw_text_2D(20, 184, "CONTROLES", 1, 0.85, 0.3)
-        draw_text_2D(20, 210, "Mover: A/D o flechas izq/der = lados | W/S o flechas arriba/abajo = avanzar y retroceder", 1, 1, 1)
-        draw_text_2D(20, 236, "ESPACIO = atacar (mantener = repetir) | C = saltar (gasta energía) | Ratón: arrastrar = orbitar, rueda = zoom", 1, 1, 1)
-        draw_text_2D(20, 262, "Objetivo: elimina todos los patógenos y cruza la salida luminosa | Eritrocito = salud | ATP = energía | Anticuerpo = marca", 1, 1, 1)
-        draw_text_2D(20, 288, "Depuración: Z/X/G/B/N/M/,/. movimientos | 1-5 Q J expresiones | 6 7 8 9 Y U salas | F1 F2 F3 (o 0 y T) = niveles 1 2 3", 1, 1, 1)
-        draw_text_2D(20, 314, "K personaje | V hitboxes | L luz | F sombreado | O sombras | E reacciones | R cámara | P o ESC = pausa", 1, 1, 1)
+        draw_text_2D(20, 210, "J1: W/A/S/D mover | ESPACIO atacar (mantener = repetir) | E hablar con un NPC | C saltar (gasta energía)", 1, 1, 1)
+        draw_text_2D(20, 236, "J2 (modo 2 jugadores): FLECHAS mover | ENTER atacar | SHIFT der. (o FIN) hablar  (jugando solo, también son del J1)", 1, 1, 1)
+        draw_text_2D(20, 262, "Diálogo: W/S o flechas elegir | E, ESPACIO o ENTER aceptar | 1-9 opción | RETROCESO cerrar | Mando: stick, A, X hablar, B", 1, 1, 1)
+        draw_text_2D(20, 288, "Objetivo: elimina a los patógenos y cruza la salida | Caído: tu compañero te reanima si se queda cerca | Ratón: orbitar y zoom", 1, 1, 1)
+        draw_text_2D(20, 314, "Eritrocito = salud | ATP = energía | Anticuerpo = marca | Los NPC dan misiones, comercio y ayudas en cada nivel", 1, 1, 1)
+        draw_text_2D(20, 340, "Depuración: Z/X/G/B/N/M/,/. movimientos | 1-5 Q J expresiones | 6 7 8 9 Y U salas | F1 F2 F3 (o 0 y T) = niveles 1 2 3", 1, 1, 1)
+        draw_text_2D(20, 366, "K personaje | V hitboxes | L luz | F sombreado | O sombras | P sonido | R cámara | ESC salir (reacciones: clic derecho)", 1, 1, 1)
 
         # A la derecha: en la columna izquierda se encimaría con el panel de estado
-        draw_panel_colisiones(width - 330, 350)
+        draw_panel_colisiones(width - 330, 400)
         draw_panel_estado(height)
 
+    _dialogo(width, height)
     _pantalla_final(width, height)
     _transicion(width, height)
 

@@ -63,7 +63,8 @@ def _frente(j):
 def _lagrima(j, st):
     fx_, fz_ = _frente(j)
     x, z = j["x"] + fx_ * 1.3, j["z"] + fz_ * 1.3
-    lagrimas.append({"x": x, "y": 2.3, "z": z, "dx": fx_, "dz": fz_, "vida": 1.1, "dano": st["dano"]})
+    lagrimas.append({"x": x, "y": 2.3, "z": z, "dx": fx_, "dz": fz_, "vida": 1.1, "dano": st["dano"],
+                     "autor": j["id"]})
     fx.explosion((x, 2.3, z), (0.6, 0.8, 1.0), 5, 3.0, 0.25, 5.0, 0.0)
 
 
@@ -71,7 +72,8 @@ def _lagrima(j, st):
 def _brimstone(j, st):
     fx_, fz_ = _frente(j)
     rayos.append({"tipo": "brimstone", "x": j["x"], "z": j["z"], "ang": j["ang"], "largo": 9.5,
-                  "vida": 0.5, "max": 0.5, "tick": 0.0, "dano": st["dano"] / 5.0})
+                  "vida": 0.5, "max": 0.5, "tick": 0.0, "dano": st["dano"] / 5.0,
+                  "dueno": j, "autor": j["id"]})
     fx.explosion((j["x"] + fx_ * 1.2, 2.2, j["z"] + fz_ * 1.2), (1.0, 0.1, 0.05), 14, 5.0, 0.35, 8.0, 0.0)
 
 
@@ -82,7 +84,7 @@ def _destello(j, st):
     for e in bio.patogenos_vivos():
         if math.hypot(e["x"] - j["x"], e["z"] - j["z"]) <= radio + e["radio"]:
             bio.aturdir(e, 3.0)
-            bio.danar(e, st["dano"])
+            bio.danar(e, st["dano"], autor=j["id"])
     destello = 1.0
     chispa.brillo_extra = 1.0
     fx.anillo(j["x"], j["z"], 1.0, radio, 0.55, (0.85, 0.6, 1.0))
@@ -93,7 +95,7 @@ def _destello(j, st):
 def _anticuerpo(j, st):
     fx_, fz_ = _frente(j)
     proyectiles.append({"x": j["x"] + fx_ * 1.2, "y": 2.0, "z": j["z"] + fz_ * 1.2,
-                        "dx": fx_, "dz": fz_, "vida": 2.4, "dano": st["dano"], "giro": 0.0})
+                        "dx": fx_, "dz": fz_, "vida": 2.4, "dano": st["dano"], "giro": 0.0, "autor": j["id"]})
     fx.explosion((j["x"] + fx_ * 1.2, 2.0, j["z"] + fz_ * 1.2), (1.0, 0.5, 0.95), 8, 4.0, 0.3, 6.0, 0.0)
 
 
@@ -102,7 +104,7 @@ def _lisis_debil(j, st):
     radio = 3.4
     for e in bio.patogenos_vivos():
         if math.hypot(e["x"] - j["x"], e["z"] - j["z"]) <= radio + e["radio"]:
-            bio.danar(e, st["dano"])
+            bio.danar(e, st["dano"], autor=j["id"])
     fx.anillo(j["x"], j["z"], 0.6, radio, 0.4, (0.6, 1.0, 0.4))
     fx.flotar((j["x"], 1.5, j["z"]), (1.0, 0.9, 0.3), 14, 1.2, 6.0)
 
@@ -116,7 +118,7 @@ def _rayo(j, st):
         a = dx * fx_ + dz * fz_
         p = abs(dx * fz_ - dz * fx_)
         if 0.0 < a < largo + e["radio"] and p < medio + e["radio"]:
-            bio.danar(e, 130 if e["tipo"] == "jefe" else 9999)
+            bio.danar(e, 130 if e["tipo"] == "jefe" else 9999, autor=j["id"])
     rayos.append({"tipo": "perno", "x": j["x"], "z": j["z"], "ang": j["ang"], "largo": largo, "vida": 0.3})
     for i in range(16):
         d = largo * i / 15.0
@@ -137,12 +139,12 @@ def _quemar(r):
         largo_e = dx * fx_ + dz * fz_
         ancho_e = abs(dx * fz_ - dz * fx_)
         if 0.0 < largo_e < r["largo"] + e["radio"] and ancho_e < medio + e["radio"]:
-            bio.danar(e, r["dano"])
+            bio.danar(e, r["dano"], autor=r.get("autor"))
     d = r["largo"] * (0.2 + 0.8 * ((r["max"] - r["vida"]) * 7.0 % 1.0))
     fx.particula((r["x"] + fx_ * d, 2.2, r["z"] + fz_ * d), (fz_ * 2.0, 1.5, -fx_ * 2.0), (1.0, 0.2, 0.1), 0.35, 8.0)
 
 
-# Inicia: avanzar proyectiles, rayos y destellos
+# Inicia: avanzar proyectiles, rayos y destellos (cada rayo de sangre sigue a su dueño)
 def actualizar(dt, j=None):
     global destello
     destello = max(0.0, destello - dt * 2.5)
@@ -151,9 +153,10 @@ def actualizar(dt, j=None):
     for r in rayos[:]:
         r["vida"] -= dt
         if r["tipo"] == "brimstone" and r["vida"] > 0.0:
-            if j is not None:
+            dueno = r.get("dueno", j)
+            if dueno is not None:
                 # el rayo sigue al personaje mientras dura
-                r["x"], r["z"] = j["x"], j["z"]
+                r["x"], r["z"] = dueno["x"], dueno["z"]
             r["tick"] -= dt
             if r["tick"] <= 0.0:
                 r["tick"] = 0.1
@@ -176,7 +179,7 @@ def actualizar(dt, j=None):
         nx, nz = bio.resolver(p["x"], p["z"], 0.2)
         choca = abs(nx - p["x"]) > 1e-3 or abs(nz - p["z"]) > 1e-3
         if golpe is not None:
-            bio.danar(golpe, p["dano"])
+            bio.danar(golpe, p["dano"], autor=p.get("autor"))
         if golpe is not None or choca or p["vida"] <= 0.0:
             fx.explosion((p["x"], p["y"], p["z"]), (0.55, 0.78, 1.0), 9, 4.5, 0.4, 6.0)
             lagrimas.remove(p)
@@ -203,7 +206,7 @@ def actualizar(dt, j=None):
                 golpe = e
                 break
         if golpe is not None:
-            bio.danar(golpe, p["dano"], marca=4.0)
+            bio.danar(golpe, p["dano"], marca=4.0, autor=p.get("autor"))
             fx.explosion((p["x"], p["y"], p["z"]), (1.0, 0.5, 0.95), 14, 6.0, 0.5, 7.0)
             proyectiles.remove(p)
         elif p["vida"] <= 0.0 or abs(p["x"]) > 22.0 or abs(p["z"]) > 22.0:

@@ -8,7 +8,9 @@ from RESOURCES import hud
 from RESOURCES import visual as v
 
 TITULO = "SELECCIONA TU CÉLULA"
-AYUDA = "[A/D o FLECHAS] mover   |   [ENTER] confirmar   |   [ESC] salir"
+AYUDA = "[A/D o FLECHAS] elegir   |   [ENTER] confirmar   |   [2] dos jugadores   |   [ESC] salir"
+AYUDA_DOS = "J1 [A/D]   |   J2 [FLECHAS]   |   [ENTER] confirmar   |   [1] un jugador   |   [ESC] salir"
+COLOR_J = ((1.0, 0.8, 0.2), (0.3, 0.85, 1.0))   # J1 dorado, J2 cian (igual que en el juego)
 FUENTE_TITULO = GLUT_BITMAP_TIMES_ROMAN_24  # type: ignore
 FUENTE = GLUT_BITMAP_HELVETICA_18  # type: ignore
 
@@ -78,8 +80,8 @@ def _dibujar_piso():
     glEnd()
 
 
-#pedestal cilíndrico con aro de color
-def _dibujar_pedestal(seleccionado):
+#pedestal cilíndrico con aro de color (el del jugador que lo eligió)
+def _dibujar_pedestal(color_aro):
     quad = _quadric()
     glPushMatrix()
     glRotatef(-90, 1, 0, 0)
@@ -91,36 +93,48 @@ def _dibujar_pedestal(seleccionado):
     glTranslatef(0.0, 0.0, ALTO_PEDESTAL)
     gluDisk(quad, 0.0, RADIO_PEDESTAL * 0.92, 32, 1)
 
-    # aro de color (dorado si está seleccionado)
-    glColor3f(1.0, 0.8, 0.2) if seleccionado else glColor3f(0.25, 0.22, 0.12)
+    # aro de color (el del jugador si está seleccionado)
+    glColor3fv(color_aro or (0.25, 0.22, 0.12))
     glTranslatef(0.0, 0.0, 0.02)
     gluDisk(quad, RADIO_PEDESTAL * 0.80, RADIO_PEDESTAL * 0.88, 32, 1)
     glPopMatrix()
 
 
-#haz de luz cálido sobre el pedestal seleccionado
-def _haz_de_luz():
+#haz de luz sobre el pedestal seleccionado, del color del jugador
+def _haz_de_luz(color):
     v.iniciar_aditivo()
     glPushMatrix()
     glTranslatef(0.0, ALTO_PEDESTAL, 0.0)
     glRotatef(-90, 1, 0, 0)
-    glColor4f(1.0, 0.85, 0.5, 0.07)
+    glColor4f(color[0], color[1], color[2], 0.07)
     glutSolidCone(RADIO_PEDESTAL * 0.95, 12.0, 28, 1)
-    glColor4f(1.0, 0.9, 0.6, 0.05)
+    glColor4f(color[0], color[1], color[2], 0.05)
     glutSolidCone(RADIO_PEDESTAL * 0.55, 12.0, 20, 1)
     glPopMatrix()
     v.terminar_transparencia()
 
 
+#jugador que eligió un personaje (0, 1 o None)
+def _elegido_por(nombre):
+    if nombre == h.personaje_actual:
+        return 0
+    if h.dos_jugadores and nombre == h.personaje_j2:
+        return 1
+    return None
+
+
 #personaje sobre su pedestal
-def _dibujar_personaje(nombre, seleccionado, t):
+def _dibujar_personaje(nombre, t):
     x = SLOTS[nombre]
+    jugador = _elegido_por(nombre)
+    seleccionado = jugador is not None
+    color = COLOR_J[jugador] if seleccionado else None
     glPushMatrix()
     glTranslatef(x, 0.0, 0.0)
 
-    _dibujar_pedestal(seleccionado)
+    _dibujar_pedestal(color)
     if seleccionado:
-        _haz_de_luz()
+        _haz_de_luz(color)
 
     glTranslatef(0.0, ALTO_PEDESTAL, 0.0)
     glTranslatef(0.0, 0.0, -7.0)
@@ -164,13 +178,21 @@ def _dibujar_hud():
     glLoadIdentity()
 
     hud.texto_centrado(48, TITULO, (1.0, 0.85, 0.3), ancho, FUENTE_TITULO)
-    hud.texto_centrado(80, AYUDA, (1.0, 1.0, 1.0), ancho)
-    hud.texto_centrado(alto - 24, ROLES[h.personaje_actual], (1.0, 0.85, 0.5), ancho)
+    hud.texto_centrado(80, AYUDA_DOS if h.dos_jugadores else AYUDA, (1.0, 1.0, 1.0), ancho)
+    if h.dos_jugadores:
+        hud.texto_centrado(112, "J2: " + ROLES[h.personaje_j2], COLOR_J[1], ancho)
+        hud.texto_centrado(alto - 24, "J1: " + ROLES[h.personaje_actual], COLOR_J[0], ancho)
+    else:
+        hud.texto_centrado(alto - 24, ROLES[h.personaje_actual], (1.0, 0.85, 0.5), ancho)
 
     for nombre, centro in centros.items():
         etiqueta = NOMBRES[nombre]
-        r, g, b = (1.0, 0.8, 0.2) if nombre == h.personaje_actual else (1.0, 1.0, 1.0)
+        jugador = _elegido_por(nombre)
+        r, g, b = COLOR_J[jugador] if jugador is not None else (1.0, 1.0, 1.0)
         hud.draw_text_2D(centro - _ancho_texto(etiqueta) / 2, alto - 60, etiqueta, r, g, b)
+        if jugador is not None and h.dos_jugadores:
+            marca = f"J{jugador + 1}"
+            hud.texto_sombra(centro - _ancho_texto(marca) / 2, alto - 86, marca, (r, g, b))
 
     glPopMatrix()
     glMatrixMode(GL_PROJECTION)
@@ -196,12 +218,11 @@ def draw_character_select_menu(t):
     _dibujar_piso()
 
     for nombre in SLOTS:
-        seleccionado = (nombre == h.personaje_actual)
-        if seleccionado:
+        if _elegido_por(nombre) is not None:
             _luz_destacada(SLOTS[nombre])
         else:
             _luz_atenuada(SLOTS[nombre])
-        _dibujar_personaje(nombre, seleccionado, t)
+        _dibujar_personaje(nombre, t)
 
     glPopAttrib()
 
