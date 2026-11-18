@@ -270,24 +270,24 @@ def draw_hud(width, height):
     glLoadIdentity()
 
     _efectos_pantalla(width, height)
-    _hud_partida(width, height)
+    if h.mostrar_hud:   # Ajustes > Mostrar HUD en pantalla
+        _hud_partida(width, height)
+        draw_text_2D(width - 150, height - 40, "[I]  Instrucciones", 1, 1, 1)
+        draw_text_2D(width - 150, height - 20, "[H]  Acerca De", 1, 1, 1)
 
-    draw_text_2D(width - 150, height - 40, "[I]  Instrucciones", 1, 1, 1)
-    draw_text_2D(width - 150, height - 20, "[H]  Acerca De", 1, 1, 1)
-
-    if h.mostrar_acerca_de:
+    if h.mostrar_hud and h.mostrar_acerca_de:
         draw_text_2D(20, 190, "ACERCA DE", 1, 1, 1)
         draw_text_2D(20, 220, "Isaac, Azazel, Chispa, Mapi, Brote y Perno", 1, 1, 1)
         draw_text_2D(20, 245, "Creado por: Roberto Tapia Ramírez y Alan Yahir Martinez", 1, 1, 1)
 
-    if h.mostrar_instrucciones:
+    if h.mostrar_hud and h.mostrar_instrucciones:
         _rect(10, 160, width - 20, 280, 0.0, 0.0, 0.0, 0.6)
         draw_text_2D(20, 184, "CONTROLES", 1, 0.85, 0.3)
         draw_text_2D(20, 210, "Mover: A/D o flechas izq/der = lados | W/S o flechas arriba/abajo = avanzar y retroceder", 1, 1, 1)
         draw_text_2D(20, 236, "ESPACIO = atacar (mantener = repetir) | C = saltar (gasta energía) | Ratón: arrastrar = orbitar, rueda = zoom", 1, 1, 1)
         draw_text_2D(20, 262, "Objetivo: elimina todos los patógenos y cruza la salida luminosa | Eritrocito = salud | ATP = energía | Anticuerpo = marca", 1, 1, 1)
         draw_text_2D(20, 288, "Depuración: Z/X/G/B/N/M/,/. movimientos | 1-5 Q J expresiones | 6 7 8 9 Y U salas | F1 F2 F3 (o 0 y T) = niveles 1 2 3", 1, 1, 1)
-        draw_text_2D(20, 314, "K personaje | V hitboxes | L luz | F sombreado | O sombras | E reacciones | P sonido | R cámara | ESC salir", 1, 1, 1)
+        draw_text_2D(20, 314, "K personaje | V hitboxes | L luz | F sombreado | O sombras | E reacciones | R cámara | P o ESC = pausa", 1, 1, 1)
 
         # A la derecha: en la columna izquierda se encimaría con el panel de estado
         draw_panel_colisiones(width - 330, 350)

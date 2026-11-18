@@ -27,6 +27,7 @@ from SCENS import escenario_linfatico as linfatico
 from SCENS import objetos_biologicos as bio
 from SCENS import efectos as fx
 from SCENS import menu_seleccion as menu
+from SCENS import menu_pausa
 
 width = 1240
 height = 680
@@ -95,7 +96,18 @@ def display():
     ahora = time.time()
     dt = ahora - ultimo_t
     ultimo_t = ahora
-    juego.actualizar(dt, ahora)
+
+    # En pausa el juego se congela: no se actualiza movimiento, IA, proyectiles ni temporizadores
+    en_pausa = h.juego_pausado and h.estado_escenario != "MENU"
+    if not en_pausa:
+        juego.actualizar(dt, ahora)
+    elif h.captura_pausa_lista:
+        # La escena ya se capturó: se muestra la imagen congelada con el menú de pausa encima
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)  # type: ignore
+        menu_pausa.dibujar_fondo_congelado()
+        menu_pausa.draw_pause_menu()
+        glutSwapBuffers()
+        return
 
     ambiente = AMBIENTES.get(h.estado_escenario)
     if ambiente:
@@ -175,6 +187,12 @@ def display():
 
     # HUD
     hud.draw_hud(width, height)
+
+    # Primer cuadro de la pausa: se guarda la escena tal como se veía y se dibuja el menú encima
+    if en_pausa:
+        menu_pausa.capturar_escena()
+        h.captura_pausa_lista = True
+        menu_pausa.draw_pause_menu()
     glutSwapBuffers()
 
 
@@ -215,7 +233,6 @@ def main():
     glutInitWindowSize(width, height)
     glutCreateWindow("Isaac y el corazon de mamá".encode("cp1252"))
     init()
-    h.crear_menu()
 
     glutDisplayFunc(display)
     glutReshapeFunc(reshape)

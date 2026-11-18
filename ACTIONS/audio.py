@@ -67,6 +67,8 @@ def init_audio():
 # REPRODUCIR Y DETENER SONIDOS
 # ============================================================
 def play_sound(name):
+    if not state.sonido_activo:
+        return
     # Leemos el sonido desde state.sounds
     sound = state.sounds.get(name)
     if sound is None:
@@ -93,6 +95,8 @@ def stop_all_sounds():
         pass
 
 def play_ambient(name):
+    if not state.sonido_activo:
+        return
     sound = state.sounds.get(name)
     if sound is None:
         return

@@ -4,6 +4,9 @@
 
 sounds = {}
 
+# False = todo el sonido silenciado (Ajustes del menú de pausa)
+sonido_activo = True
+
 last_sound = None
 
 

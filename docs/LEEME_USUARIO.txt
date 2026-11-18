@@ -28,7 +28,8 @@ CONTROLES
   Ayuda en pantalla:  I = instrucciones | H = acerca de
   Cambiar de nivel:   F1, F2, F3 (niveles 1, 2 y 3)
   Pantallas finales:  ENTER = reiniciar o volver al menú | RETROCESO = menú
-  Salir:              ESC
+  Pausa:              P o ESC (menú con escenarios, personajes, ajustes y salir)
+  Navegar la pausa:   W / S o flechas arriba y abajo, ENTER = elegir, ESC = atrás
 
 SI ALGO FALLA
   - Junto al .exe se crea el archivo  juego_log.txt  con los mensajes del programa.
