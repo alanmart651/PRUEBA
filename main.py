@@ -17,6 +17,8 @@ from SCENS import saladeldiablo as sala_diablo
 from SCENS import saladarkroom as darkroom
 from ACTIONS import juego
 from ACTIONS import combate
+from ACTIONS import mandos
+from ACTIONS import npcs
 from ACTIONS.audio import init_audio, shutdown_audio
 from SCENS import homeroom as home
 from SCENS import heartroom as heart
@@ -47,9 +49,8 @@ def init():
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST)
 
 
-#personaje del jugador, girado hacia donde mira
-def dibujar_jugador(t, expresion, movimiento, salto):
-    j = juego.jugador
+#personaje de un jugador, girado hacia donde mira
+def dibujar_jugador(j, t, expresion, movimiento, salto):
     en_juego = juego.en_nivel() and juego.fase == "JUGANDO"
     glPushMatrix()
     glTranslatef(j["x"], 0.0, j["z"] - 7.0)
@@ -61,10 +62,10 @@ def dibujar_jugador(t, expresion, movimiento, salto):
 
     # Parpadea mientras es invulnerable tras un golpe
     if not (en_juego and j["inv"] > 0.0 and int(t * 14) % 2 == 0):
-        personajes.DIBUJAR[h.personaje_actual](expresion, movimiento, t)
+        personajes.DIBUJAR[juego.personaje_de(j)](expresion, movimiento, t)
 
     # Escudo frontal del Perno
-    if en_juego and juego.stats()["escudo"]:
+    if en_juego and juego.stats(j)["escudo"] and not j["caido"]:
         v.iniciar_aditivo()
         glPushMatrix()
         glTranslatef(0.0, 2.4, 7.0 + 1.9)
@@ -95,6 +96,7 @@ def display():
     ahora = time.time()
     dt = ahora - ultimo_t
     ultimo_t = ahora
+    mandos.leer()
     juego.actualizar(dt, ahora)
 
     ambiente = AMBIENTES.get(h.estado_escenario)
@@ -113,12 +115,12 @@ def display():
         glutSwapBuffers()
         return
 
-    j = juego.jugador
+    cx, cz = juego.centro()
     glTranslatef(0.0, -3.0, h.zoom_z)
     glRotatef(h.angle_x, 1, 0, 0)
     glRotatef(h.angle_y, 0, 1, 0)
-    # La cámara sigue un poco al personaje
-    glTranslatef(-j["x"] * 0.3, 0.0, -(j["z"] - 7.0) * 0.3)
+    # La cámara sigue un poco al personaje (con dos jugadores, al punto medio entre ambos)
+    glTranslatef(-cx * 0.3, 0.0, -(cz - 7.0) * 0.3)
 
     if ambiente:
         v.niebla(*ambiente)
@@ -126,8 +128,7 @@ def display():
         v.sin_niebla()
 
     t = ahora
-    salto = juego.altura_salto(t)
-    luz.aplicar_luces(t, h.estado_escenario, (j["x"], j["z"]))
+    luz.aplicar_luces(t, h.estado_escenario, (cx, cz))
 
     # Material base húmedo y brillante para cualquier escenario
     v.material(60.0, 0.5)
@@ -152,23 +153,31 @@ def display():
     elif h.estado_escenario == "u":
         planetario.draw_planetarium_room()
 
-    luz.aplicar_luces(t, h.estado_escenario, (j["x"], j["z"]))
+    luz.aplicar_luces(t, h.estado_escenario, (cx, cz))
 
     # Sombras
-    luz.dibujar_sombra(j["x"], j["z"], 1.3, salto)
+    jugadores = juego.activos()
+    for j in jugadores:
+        luz.dibujar_sombra(j["x"], j["z"], 1.3, juego.altura_salto(t, j))
     en_nivel = juego.en_nivel()
     if en_nivel:
-        for sx, sz, radio, altura in bio.sombras():
+        for sx, sz, radio, altura in bio.sombras() + npcs.sombras():
             luz.dibujar_sombra(sx, sz, radio, altura)
         bio.dibujar(t, h.mostrar_hitboxes)
+        npcs.dibujar(t, jugadores)
         juego.dibujar_salida(t)
+        juego.dibujar_marcas(t)
         combate.dibujar(t)
+    else:
+        npcs.etiquetas.clear()
 
-    # Personaje
-    expresion, movimiento = juego.pose()
-    h.expresion_mostrada = expresion
-    h.movimiento_mostrado = movimiento
-    dibujar_jugador(t, expresion, movimiento, salto)
+    # Personajes (el HUD de depuración muestra la pose del J1)
+    for j in jugadores:
+        expresion, movimiento = juego.pose(j)
+        if j is juego.jugador:
+            h.expresion_mostrada = expresion
+            h.movimiento_mostrado = movimiento
+        dibujar_jugador(j, t, expresion, movimiento, juego.altura_salto(t, j))
 
     fx.dibujar()
     v.sin_niebla()
@@ -211,6 +220,7 @@ def main():
     # Al salir (ESC o cerrar la ventana) glutMainLoop regresa para poder cerrar el audio
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION)
     init_audio()
+    mandos.iniciar()
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)  # type: ignore
     glutInitWindowSize(width, height)
     glutCreateWindow("Isaac y el corazon de mamá".encode("cp1252"))

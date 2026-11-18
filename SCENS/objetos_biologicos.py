@@ -210,9 +210,12 @@ def tomar_eventos():
 # =====================================================================
 
 # Inicia: dañar a un patógeno; devuelve True si entra en lisis
-def danar(e, cantidad, marca=0.0):
+# autor: índice del jugador que hizo el daño (la eliminación cuenta para él)
+def danar(e, cantidad, marca=0.0, autor=None):
     if e["tipo"] not in PATOGENOS or e["estado"] != "vivo":
         return False
+    if autor is not None:
+        e["autor"] = autor
     if e["marcado"] > 0.0:
         cantidad *= 1.8
     if marca > 0.0:
@@ -247,7 +250,7 @@ def _iniciar_lisis(e):
     n = 70 if e["tipo"] == "jefe" else 34
     fx.explosion((e["x"], e["y"], e["z"]), c, n, 8.0, 1.0, 13.0)
     fx.anillo(e["x"], e["z"], 0.5, e["radio"] * 2.4 + 1.0, 0.6, c)
-    eventos.append(("eliminado", e))
+    eventos.append(("eliminado", e, e.get("autor")))
 
 
 # Inicia: premios al terminar la lisis y división del coco
@@ -434,8 +437,19 @@ COLISION = {"virus_a": _col_esfera, "virus_b": _col_esfera, "coco": _col_esfera,
             "anticuerpo": _col_capsula, "vesicula": _col_aabb}
 
 
+# Inicia: jugador más cercano a una entidad (los patógenos persiguen a ese)
+def _mas_cercano_a(e, cuerpos):
+    mejor, md = None, None
+    for c in cuerpos:
+        d = (c[1] - e["x"]) ** 2 + (c[2] - e["z"]) ** 2
+        if md is None or d < md:
+            mejor, md = c, d
+    return mejor
+
+
 # Inicia: actualizar todas las entidades y detectar contactos
-def actualizar(dt, t, px, pz, py, pr):
+# cuerpos: lista de (indice, x, z, y, radio) de los jugadores en pie; los eventos llevan ese índice
+def actualizar(dt, t, cuerpos):
     patogenos = []
     for e in entidades[:]:
         tipo = e["tipo"]
@@ -448,7 +462,9 @@ def actualizar(dt, t, px, pz, py, pr):
                 _terminar_lisis(e)
             continue
         if tipo in PATOGENOS:
-            _ia(e, dt, px, pz)
+            objetivo = _mas_cercano_a(e, cuerpos)
+            if objetivo is not None:
+                _ia(e, dt, objetivo[1], objetivo[2])
             e["x"], e["z"] = resolver(e["x"], e["z"], e["radio"] * 0.6)
             if tipo in ("virus_a", "virus_b"):
                 e["y"] = e["y0"] + math.sin(t * 5.0 + e["fase"]) * 0.3
@@ -458,17 +474,21 @@ def actualizar(dt, t, px, pz, py, pr):
     for e in entidades[:]:
         if e["estado"] != "vivo":
             continue
-        toca = COLISION[e["tipo"]](e, px, py, pz, pr)
-        e["colisionando"] = toca
-        if not toca:
+        quien = None
+        for indice, px, pz, py, pr in cuerpos:
+            if COLISION[e["tipo"]](e, px, py, pz, pr):
+                quien = indice
+                break
+        e["colisionando"] = quien is not None
+        if quien is None:
             continue
         if e["tipo"] in PATOGENOS:
             if e["retro"] <= 0.0:
                 e["retro"] = 0.9
-                eventos.append(("contacto", e))
+                eventos.append(("contacto", e, quien))
         elif e["tipo"] != "vesicula":
             entidades.remove(e)
-            eventos.append(("recoger", e))
+            eventos.append(("recoger", e, quien))
 
 
 # =====================================================================

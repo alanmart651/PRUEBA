@@ -20,10 +20,21 @@ INSTALACIÓN
      en una carpeta temporal.
 
 CONTROLES
-  Menú de personajes: A / D o flechas = elegir | ENTER = confirmar | ESC = salir
+  Menú de personajes: A / D o flechas = elegir | ENTER = confirmar | 1 o 2 = uno o dos jugadores | ESC = salir
   Mover:              A D W S o flechas
-  Atacar:             ESPACIO (mantenerlo repite el ataque)
+  Atacar:             ESPACIO o ENTER (mantenerlo repite el ataque)
+  Hablar con un NPC:  E (o SHIFT derecho / FIN) al estar cerca; el juego se pausa durante el diálogo
+  Diálogo:            W/S o flechas = elegir | E, ESPACIO o ENTER = aceptar | 1-9 = opción | RETROCESO = cerrar
   Saltar:             C (gasta energía)
+
+  DOS JUGADORES (pulsa 2 en el menú; cada uno elige un personaje distinto)
+  Jugador 1:          A D W S = mover | ESPACIO = atacar | E = hablar
+  Jugador 2:          flechas = mover | ENTER = atacar | SHIFT derecho (o FIN) = hablar
+  Si un jugador cae, su compañero lo reanima quedándose cerca unos segundos.
+  La partida se pierde solo si caen los dos.
+
+  MANDOS (opcional): stick o cruceta = mover | A = atacar o aceptar | X = hablar | B = cerrar diálogo
+  Con un jugador, el mando es del J1. Con dos jugadores y un solo mando, el mando es del J2.
   Cámara:             ratón (arrastrar = orbitar, rueda = zoom) | R = reiniciar cámara
   Ayuda en pantalla:  I = instrucciones | H = acerca de
   Cambiar de nivel:   F1, F2, F3 (niveles 1, 2 y 3)
