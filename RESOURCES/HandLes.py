@@ -78,11 +78,6 @@ GLUT_KEY_CTRL_R = 0x0073
 FLECHAS = {GLUT_KEY_LEFT: "izq", GLUT_KEY_RIGHT: "der", GLUT_KEY_UP: "arr", GLUT_KEY_DOWN: "aba",
            GLUT_KEY_SHIFT_R: "hablar", GLUT_KEY_CTRL_R: "hablar", GLUT_KEY_END: "hablar"}
 NIVELES_F = {GLUT_KEY_F1: 0, GLUT_KEY_F2: 1, GLUT_KEY_F3: 2}   # F1, F2 y F3 cambian de nivel
-ACCIONES_MENU = [
-    ("Luz on/off", 500), ("Sombreado plano/suave", 501), ("Sombras on/off", 502),
-    ("Hitboxes on/off", 503), ("Reacciones on/off", 504), ("Instrucciones", 505),
-    ("Acerca de", 506), ("Reiniciar camara", 507), ("Reiniciar partida", 508), ("Volver al menu", 509),
-]
 
 
 #cambiar movimiento
@@ -221,11 +216,273 @@ def alternar_reacciones():
     play_sound("click")
 
 
+# =====================================================================
+# MENÚ DE PAUSA
+# =====================================================================
+SENSIBILIDADES = [("Baja", 0.5), ("Normal", 1.0), ("Alta", 1.6)]
+TITULOS_PAUSA = {"PRINCIPAL": "PAUSA", "ESCENARIOS": "CAMBIAR ESCENARIO", "PERSONAJES": "CAMBIAR PERSONAJE",
+                 "AJUSTES": "AJUSTES", "AVANZADO": "OPCIONES AVANZADAS", "CONTROLES": "CONTROLES E INSTRUCCIONES"}
+# A dónde regresa ESC desde cada submenú: (submenú, posición del cursor)
+RETORNO_PAUSA = {"ESCENARIOS": ("PRINCIPAL", 1), "PERSONAJES": ("PRINCIPAL", 2), "AJUSTES": ("PRINCIPAL", 3),
+                 "CONTROLES": ("PRINCIPAL", 4), "AVANZADO": ("AJUSTES", 4)}
+
+
+def _si_no(valor):
+    return "SÍ" if valor else "NO"
+
+
+def _on_off(valor):
+    return "ACTIVADO" if valor else "DESACTIVADO"
+
+
+#nombre de la sensibilidad de cámara actual
+def nombre_sensibilidad():
+    for nombre, valor in SENSIBILIDADES:
+        if abs(valor - sensibilidad_camara) < 1e-6:
+            return nombre
+    return "Normal"
+
+
+#personajes que el J1 puede tomar desde la pausa (con dos jugadores, no el del J2)
+def _personajes_pausa():
+    return [p for p in opciones_personaje if not (dos_jugadores and p == personaje_j2)]
+
+
+#opciones (etiqueta, acción) del submenú actual; la lista de personajes se lee de opciones_personaje
+def opciones_pausa():
+    if subestado_pausa == "ESCENARIOS":
+        return [(etiqueta + (" (actual)" if esc == estado_escenario else ""), ("escenario", esc))
+                for etiqueta, esc in ETIQUETAS_ESCENARIO] + [("Volver", "atras")]
+    if subestado_pausa == "PERSONAJES":
+        return [(p.capitalize() + (" (actual)" if p == personaje_actual else ""), ("personaje", p))
+                for p in _personajes_pausa()] + [("Volver", "atras")]
+    if subestado_pausa == "AJUSTES":
+        return [("Sonido: " + _on_off(sonido_activo), "sonido"),
+                ("Música de fondo: " + _si_no(is_sound_playing), "musica"),
+                ("Mostrar HUD en pantalla: " + _si_no(mostrar_hud), "hud"),
+                ("Sensibilidad de Cámara: " + nombre_sensibilidad(), "sensibilidad"),
+                ("Opciones avanzadas", "ir_avanzado"),
+                ("Reiniciar Escenario Actual", "reiniciar_escenario"),
+                ("Volver", "atras")]
+    if subestado_pausa == "AVANZADO":
+        return [("Luz: " + _on_off(luz.luz_activa), "luz"),
+                ("Sombreado: " + ("Suave" if luz.sombreado_suave else "Plano"), "sombreado"),
+                ("Sombras: " + _on_off(luz.sombras_activas), "sombras"),
+                ("Hitboxes: " + _on_off(mostrar_hitboxes), "hitboxes"),
+                ("Reacciones del personaje: " + _on_off(reacciones_activas), "reacciones"),
+                ("Expresión: " + estado_expresion, "expresion"),
+                ("Movimiento: " + estado_movimiento, "movimiento"),
+                ("Acerca de: " + _si_no(mostrar_acerca_de), "acerca"),
+                ("Reiniciar cámara", "camara"),
+                ("Volver", "atras")]
+    if subestado_pausa == "CONTROLES":
+        return [("Volver", "atras")]
+    return [("Reanudar Partida", "reanudar"),
+            ("Cambiar Escenario", "ir_escenarios"),
+            ("Cambiar Personaje" + (" (J1)" if dos_jugadores else ""), "ir_personajes"),
+            ("Ajustes", "ir_ajustes"),
+            ("Controles e Instrucciones", "ir_controles"),
+            ("Volver al Menú Arcade", "menu_arcade"),
+            ("Salir del Juego", "salir")]
+
+
+#entrar a la pausa (solo durante una partida en curso)
+def pausar():
+    from ACTIONS import juego  # import tardío: juego.py también importa este módulo
+    global juego_pausado, subestado_pausa, indice_pausa, captura_pausa_lista, is_mouse_pressed
+    if estado_escenario == "MENU" or juego_pausado or juego.fase != "JUGANDO":
+        return
+    juego_pausado = True
+    subestado_pausa = "PRINCIPAL"
+    indice_pausa = 0
+    captura_pausa_lista = False
+    is_mouse_pressed = False
+    juego.soltar_teclas()         # soltar las teclas de los dos jugadores para no seguir caminando al volver
+    play_sound("click")
+
+
+#salir de la pausa y seguir jugando
+def reanudar():
+    from ACTIONS import juego
+    global juego_pausado, captura_pausa_lista
+    juego_pausado = False
+    captura_pausa_lista = False
+    juego.soltar_teclas()
+    play_sound("click")
+
+
+#cambiar de submenú
+def _ir_subestado(nombre, cursor=0):
+    global subestado_pausa, indice_pausa
+    subestado_pausa = nombre
+    indice_pausa = cursor
+    play_sound("click")
+
+
+#regresar un nivel dentro del menú de pausa (ESC)
+def volver_pausa():
+    if subestado_pausa == "PRINCIPAL":
+        reanudar()
+    else:
+        nombre, cursor = RETORNO_PAUSA.get(subestado_pausa, ("PRINCIPAL", 0))
+        _ir_subestado(nombre, cursor)
+
+
+#mover el cursor del menú (-1 arriba, +1 abajo) con sonido
+def mover_pausa(delta):
+    global indice_pausa
+    indice_pausa = (indice_pausa + delta) % len(opciones_pausa())
+    play_sound("click")
+
+
+#ajuste: sonido general (silencia o activa play_sound)
+def alternar_sonido_ajuste():
+    global sonido_activo, is_sound_playing
+    sonido_activo = not sonido_activo
+    state.sonido_activo = sonido_activo
+    if not sonido_activo:
+        stop_all_sounds()
+        is_sound_playing = False
+    else:
+        play_sound("click")
+
+
+#ajuste: mostrar u ocultar el HUD
+def alternar_hud():
+    global mostrar_hud
+    mostrar_hud = not mostrar_hud
+    play_sound("click")
+
+
+#ajuste: sensibilidad de la cámara (Baja, Normal, Alta)
+def ciclar_sensibilidad():
+    global sensibilidad_camara
+    nombres = [valor for _, valor in SENSIBILIDADES]
+    actual = min(range(len(nombres)), key=lambda i: abs(nombres[i] - sensibilidad_camara))
+    sensibilidad_camara = nombres[(actual + 1) % len(nombres)]
+    play_sound("click")
+
+
+#opciones avanzadas: pasar a la siguiente expresión o movimiento
+def ciclar_expresion():
+    valores = [valor for _, valor in ETIQUETAS_EXPRESION]
+    i = valores.index(estado_expresion) if estado_expresion in valores else -1
+    cambiar_expresion(valores[(i + 1) % len(valores)])
+
+
+def ciclar_movimiento():
+    valores = [valor for _, valor in ETIQUETAS_MOVIMIENTO]
+    i = valores.index(estado_movimiento) if estado_movimiento in valores else -1
+    cambiar_movimiento(valores[(i + 1) % len(valores)])
+
+
+#ajuste: volver a empezar el escenario actual y seguir jugando
+def reiniciar_escenario_actual():
+    reanudar()
+    ir_a_escenario(estado_escenario)
+
+
+#ejecutar la opción marcada con el cursor
+def activar_opcion_pausa():
+    from ACTIONS import juego
+    opciones = opciones_pausa()
+    etiqueta, accion_pausa = opciones[min(indice_pausa, len(opciones) - 1)]
+
+    if isinstance(accion_pausa, tuple):
+        reanudar()
+        if accion_pausa[0] == "escenario":
+            ir_a_escenario(accion_pausa[1])
+        else:
+            cambiar_personaje(accion_pausa[1])
+        return
+
+    if accion_pausa == "reanudar":
+        reanudar()
+    elif accion_pausa == "atras":
+        volver_pausa()
+    elif accion_pausa == "ir_escenarios":
+        actual = [esc for _, esc in ETIQUETAS_ESCENARIO]
+        _ir_subestado("ESCENARIOS", actual.index(estado_escenario) if estado_escenario in actual else 0)
+    elif accion_pausa == "ir_personajes":
+        lista = _personajes_pausa()
+        _ir_subestado("PERSONAJES", lista.index(personaje_actual) if personaje_actual in lista else 0)
+    elif accion_pausa == "ir_ajustes":
+        _ir_subestado("AJUSTES")
+    elif accion_pausa == "ir_avanzado":
+        _ir_subestado("AVANZADO")
+    elif accion_pausa == "ir_controles":
+        _ir_subestado("CONTROLES")
+    elif accion_pausa == "menu_arcade":
+        reanudar()
+        juego.volver_al_menu()
+    elif accion_pausa == "salir":
+        play_sound("salir")
+        glutLeaveMainLoop()
+    elif accion_pausa == "sonido":
+        alternar_sonido_ajuste()
+    elif accion_pausa == "musica":
+        if sonido_activo:
+            alternar_sonido()
+    elif accion_pausa == "hud":
+        alternar_hud()
+    elif accion_pausa == "sensibilidad":
+        ciclar_sensibilidad()
+    elif accion_pausa == "reiniciar_escenario":
+        reiniciar_escenario_actual()
+    elif accion_pausa == "luz":
+        luz.alternar_luz()
+        play_sound("click")
+    elif accion_pausa == "sombreado":
+        luz.alternar_sombreado()
+        play_sound("click")
+    elif accion_pausa == "sombras":
+        luz.alternar_sombras()
+        play_sound("click")
+    elif accion_pausa == "hitboxes":
+        alternar_hitboxes()
+    elif accion_pausa == "reacciones":
+        alternar_reacciones()
+    elif accion_pausa == "expresion":
+        ciclar_expresion()
+    elif accion_pausa == "movimiento":
+        ciclar_movimiento()
+    elif accion_pausa == "acerca":
+        alternar_acerca_de()
+    elif accion_pausa == "camara":
+        reiniciar_camara()
+
+
+#teclas dentro de la pausa: W/S mueven, ENTER elige, ESC retrocede, P reanuda (las flechas llegan por accion)
+def tecla_pausa(key):
+    k = key.lower()
+    if k == b'p':
+        reanudar()
+    elif key == b'\x1b':
+        volver_pausa()
+    elif k == b'w':
+        mover_pausa(-1)
+    elif k == b's':
+        mover_pausa(1)
+    elif key in (b'\r', b'\n'):
+        activar_opcion_pausa()
+
+
 #acción de un jugador, venga del teclado o de un mando
 #nombre: "izq", "der", "arr", "aba", "atacar", "hablar", "cerrar" (diálogo) o "aceptar" (menú y pantallas finales)
 def accion(jugador, nombre, presionada):
     from ACTIONS import juego, npcs
     direcciones = ("izq", "der", "arr", "aba")
+
+    #PAUSA: cualquier jugador (teclado o mando) maneja el menú de pausa
+    if juego_pausado and estado_escenario != "MENU":
+        if presionada:
+            if nombre in ("arr", "aba"):
+                mover_pausa(-1 if nombre == "arr" else 1)
+            elif nombre in ("atacar", "aceptar"):
+                activar_opcion_pausa()
+            elif nombre == "cerrar":
+                volver_pausa()
+        return
 
     #MENÚ DE SELECCIÓN: cada jugador mueve su selección; atacar o aceptar confirma
     if estado_escenario == "MENU":
@@ -379,7 +636,7 @@ def special_keys(key, x, y):
     from ACTIONS import juego
     if key in FLECHAS:
         accion(indice_flechas(), FLECHAS[key], True)
-    elif key in NIVELES_F and estado_escenario != "MENU" and juego.fase == "JUGANDO":
+    elif key in NIVELES_F and estado_escenario != "MENU" and juego.fase == "JUGANDO" and not juego_pausado:
         ir_a_escenario(NIVELES_F[key])
     glutPostRedisplay()
 

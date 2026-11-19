@@ -9,8 +9,10 @@ BLANCO = (1.0, 1.0, 1.0)
 
 # Guía de teclas que se muestra en "Controles e Instrucciones"
 LINEAS_CONTROLES = [
-    "Mover: A / D / W / S o las flechas",
-    "Atacar: ESPACIO (mantenerlo repite el ataque)",
+    "J1: A / D / W / S mover | ESPACIO atacar (mantener = repetir) | E hablar con un NPC",
+    "J2 (dos jugadores): flechas mover | ENTER atacar | SHIFT derecho o FIN hablar",
+    "Jugando solo, las flechas, ENTER y SHIFT derecho también son del J1",
+    "Diálogo: W/S o flechas elegir | E o ENTER aceptar | 1-9 opción | RETROCESO cerrar",
     "Saltar: C (gasta energía)",
     "Cámara: arrastrar con el ratón = orbitar | rueda = zoom | R = reiniciar cámara",
     "Pantalla: I = instrucciones | H = acerca de",

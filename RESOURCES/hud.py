@@ -413,7 +413,7 @@ def draw_hud(width, height):
         draw_text_2D(20, 288, "Objetivo: elimina a los patógenos y cruza la salida | Caído: tu compañero te reanima si se queda cerca | Ratón: orbitar y zoom", 1, 1, 1)
         draw_text_2D(20, 314, "Eritrocito = salud | ATP = energía | Anticuerpo = marca | Los NPC dan misiones, comercio y ayudas en cada nivel", 1, 1, 1)
         draw_text_2D(20, 340, "Depuración: Z/X/G/B/N/M/,/. movimientos | 1-5 Q J expresiones | 6 7 8 9 Y U salas | F1 F2 F3 (o 0 y T) = niveles 1 2 3", 1, 1, 1)
-        draw_text_2D(20, 366, "K personaje | V hitboxes | L luz | F sombreado | O sombras | P sonido | R cámara | ESC salir (reacciones: clic derecho)", 1, 1, 1)
+        draw_text_2D(20, 366, "K personaje | V hitboxes | L luz | F sombreado | O sombras | R cámara | P o ESC = pausa (reacciones: Pausa > Ajustes)", 1, 1, 1)
 
         # A la derecha: en la columna izquierda se encimaría con el panel de estado
         draw_panel_colisiones(width - 330, 400)

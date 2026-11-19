@@ -98,7 +98,18 @@ def display():
     dt = ahora - ultimo_t
     ultimo_t = ahora
     mandos.leer()
-    juego.actualizar(dt, ahora)
+
+    # En pausa el juego se congela: no se actualiza movimiento, IA, proyectiles ni temporizadores
+    en_pausa = h.juego_pausado and h.estado_escenario != "MENU"
+    if not en_pausa:
+        juego.actualizar(dt, ahora)
+    elif h.captura_pausa_lista:
+        # La escena ya se capturó: se muestra la imagen congelada con el menú de pausa encima
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)  # type: ignore
+        menu_pausa.dibujar_fondo_congelado()
+        menu_pausa.draw_pause_menu()
+        glutSwapBuffers()
+        return
 
     ambiente = AMBIENTES.get(h.estado_escenario)
     if ambiente:
